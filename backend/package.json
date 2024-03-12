@@ -1,0 +1,66 @@
+{
+  "name": "standom-backend",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "webpack --mode=development",
+    "build:dev": "webpack --mode=development",
+    "build:prod": "webpack --mode=production",
+    "lint": "eslint . --ext .ts",
+    "watch": "webpack --watch",
+    "start-squid": "nodemon --watch ./src --exec ts-node -r tsconfig-paths/register src/main.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@squidcloud/backend": "^1.0.160",
+    "@squidcloud/client": "^1.0.160",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": ">=7.5.7 <8.0.0"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.4.1",
+    "@jest/types": "^29.4.1",
+    "@squidcloud/local-backend": "^1.0.160",
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "copy-webpack-plugin": "^11.0.0",
+    "eslint": "^8.55.0",
+    "eslint-plugin-unused-imports": "^3.0.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "rimraf": "^5.0.5",
+    "terser-webpack-plugin": "^5.3.9",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "tsconfig-paths-webpack-plugin": "^4.1.0",
+    "typescript": "^5.1.6",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "zip-webpack-plugin": "^4.0.1",
+    "tsoa": "^5.1.1"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
