@@ -62,11 +62,10 @@ export default function AddNewLyrics() {
     //     const { lyric_id, song_id, lyric } = snapshotRow.data;
     // })
     
-    // TO DO: Update how you pull in currentUser
-    // const { currentUser } = useAuth()
+
     const navigate = useNavigate();
 
-    // TO DO: Update how you write lyric data to new DB
+    // TO DO: Update how you write lyric data to postgres
     // function writeUserData(userId, song, lyrics) {
     //     push(ref(database, 'users/' + userId + '/favorites'), {
     //         favorite_song: song,
