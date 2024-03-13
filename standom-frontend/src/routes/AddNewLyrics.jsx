@@ -120,10 +120,10 @@ export default function AddNewLyrics() {
     //     searchDatabase();
     // }, [searchQuery])
     
+    // TO DO -- ADD <SEARCH /> BACK IN WHEN I FIGURE OUT HOW IT WORKS!
   return (
     <>
         <NavigationBar />
-        <Search />
         <Card>
             <Card.Body>
                 <Form onSubmit={handleSubmit}>
