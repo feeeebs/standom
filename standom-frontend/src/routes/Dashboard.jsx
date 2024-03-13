@@ -15,7 +15,7 @@ export default function Dashboard({ userInfo }) {
     <>
         <NavigationBar />
         <div className='text-center mb-4'>
-            <h1>Welcome, {userInfo.name}!</h1>
+            <h1>Welcome, {userInfo.firstName}!</h1>
         </div>
         <Container>
             <Row>

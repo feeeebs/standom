@@ -8,7 +8,6 @@ import NavigationBar from '../components/NavigationBar';
 
 
 export default function UpdateProfile({ userInfo }) {
-
     const emailRef = useRef();
     const passwordRef = useRef();
     const passwordConfirmRef = useRef();
@@ -22,7 +21,8 @@ export default function UpdateProfile({ userInfo }) {
     // Set default form data
     const [formData, setFormData] = useState({
         id: userInfo.id,
-        name: userInfo.name,
+        firstName: userInfo.firstName,
+        lastName: userInfo.lastName,
         email: userInfo.email,
     });
     console.log('formData: ', formData);
@@ -34,7 +34,8 @@ export default function UpdateProfile({ userInfo }) {
         console.log("Form data being inserted: ", formData);
         await usersCollection.doc({ id: formData.id }).insert({
             //id: formData.id,
-            name: formData.name,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
             email: formData.email,
         })
             .then(() => console.log("User data updated successfully"))
@@ -106,12 +107,21 @@ export default function UpdateProfile({ userInfo }) {
             <h2 className='text-center mb-4'>Update Profile</h2>
             {error && <Alert variant="danger">{error}</Alert>}
             <Form onSubmit={handleSubmit}>
-                <Form.Group id='name'>
-                    <Form.Label>Name</Form.Label>
+                <Form.Group id='firstName'>
+                    <Form.Label>First Name</Form.Label>
                     <Form.Control 
-                        name='name'
+                        name='firstName'
                         type='text'
-                        value={formData.name}
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                    />
+                </Form.Group>
+                <Form.Group id='lastName'>
+                    <Form.Label>Last Name</Form.Label>
+                    <Form.Control 
+                        name='lastName'
+                        type='text'
+                        value={formData.lastName}
                         onChange={handleInputChange}
                     />
                 </Form.Group>

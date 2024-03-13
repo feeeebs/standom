@@ -13,14 +13,17 @@ const Profile = ({ userInfo }) => {
   return (
     <>
       <NavigationBar />
-        <h2 className="text-center mb-4">{userInfo.name}'s Profile</h2>
+        <h2 className="text-center mb-4">{userInfo.firstName}'s Profile</h2>
         <Card>
             <Card.Body>
                 <div>
                   <strong>Email: {userInfo.email}</strong> 
                 </div>
                 <div>
-                  <strong>Name: {userInfo.name}</strong> 
+                  <strong>First Name: {userInfo.firstName}</strong> 
+                </div>
+                <div>
+                  <strong>Last Name: {userInfo.lastName}</strong> 
                 </div>
                 <Link to="/update-profile" className="btn btn-primary w-100 mt-3">Update Profile</Link>
 

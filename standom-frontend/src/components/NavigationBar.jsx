@@ -16,7 +16,7 @@ export default function NavigationBar() {
                             <Nav.Link as={Link} to='/profile' className='mr-3'>Profile</Nav.Link>
                         </Nav>
                     </Navbar.Collapse>
-            <Form inline>
+            <Form inline="true">
                 <Row>
                     <Col xs='auto'>
                         <LogoutButton />

@@ -10,7 +10,7 @@ import Profile from '../routes/Profile';
 import UpdateProfile from '../routes/UpdateProfile';
 import AddNewLyrics from '../routes/AddNewLyrics';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateAll, updateEmail, updateName } from '../utilities/Redux/userSlice';
+import { updateAll, updateEmail, updateFirstName, updateLastName } from '../utilities/Redux/userSlice';
 
 function App() {
 
@@ -37,17 +37,25 @@ function App() {
     useEffect(() => {
       if (isAuthenticated && user) {
         console.log('Authenticated and user stuff running')
+        // Split out first/last names
+        const fullName = user.name;
+        const [firstName, ...lastNames] = fullName.split(' ');
+        const lastName = lastNames.join(' ');
+
+        console.log('first name: ', firstName);
+        console.log('last name: ', lastName);
         dispatch(updateAll({
           id: user.sub,
           email: user.email,
-          name: user.name
+          firstName: firstName,
+          lastName: lastName,
         }))
       }
     }, [dispatch, isAuthenticated, user]);
     
     // Store initial user info in variables to use here
     const userInformation = useSelector(state => state.user.userInfo);
-    const { id, email, name } = userInformation;
+    const { id, email, firstName, lastName } = userInformation;
   
 
     // Check to see if current user exists in DB - triggers other functions to update Redux, insert new users into DB
@@ -102,7 +110,8 @@ function App() {
             // console.log('name during updateUserInfo: ', docRef.data.name);
             // console.log('email during updateUserInfo: ', docRef.data.email);
             dispatch(updateEmail(docRef.data.email));
-            dispatch(updateName(docRef.data.name));
+            dispatch(updateFirstName(docRef.data.first_name));
+            dispatch(updateLastName(docRef.data.last_name))
         }
       } catch (error) {
         console.error('Error in updateUserInfo: ', error);
@@ -116,7 +125,8 @@ const insertNewUser = async () => {
   console.log("Form data being inserted: ", userInformation);
   await usersCollection.doc({ id: id }).insert({
       id: id,
-      name: name,
+      first_name: firstName,
+      last_name: lastName,
       email: email,
   })
       .then(() => console.log("New user inserted into DB successfully"))
