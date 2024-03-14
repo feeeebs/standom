@@ -25,7 +25,9 @@ export default function Dashboard({ userInfo }) {
                     </div>
                 </Col>
                 <Col>
-                    <MyFavoriteLyrics />
+                    <div>
+                        <MyFavoriteLyrics />
+                    </div>
                 </Col>
             </Row>
         </Container>

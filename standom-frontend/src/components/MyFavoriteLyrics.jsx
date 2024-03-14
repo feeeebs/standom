@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { Button, Card, ListGroup } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { addNewFavoriteLyrics } from '../utilities/Redux/lyricsSlice';
+import { addNewFavoriteLyrics, updateLyricsFetched } from '../utilities/Redux/lyricsSlice';
 
 
 // TO DO -- reformat into a table and make it prettier
@@ -12,19 +12,24 @@ import { addNewFavoriteLyrics } from '../utilities/Redux/lyricsSlice';
 export default function MyFavoriteLyrics() {
 // get array of current user's favorite lyrics from database
     const [error, setError] = useState();
-    const [dataFetched, setDataFetched] = useState(false);
+    const [lyrics, setLyrics] = useState([]);
+
     const navigate = useNavigate();
 
     const dispatch = useDispatch();
     const userId = useSelector(state => state.user.userInfo.id);
+    const lyricsFetched = useSelector(state => state.lyrics.fetched);
 
     const lyricsCollection = useCollection('song_lyrics', 'postgres_id');
     const favoritesCollection = useCollection('users_favorite_lyrics', 'postgres_id');
 
-    let trackLoop = 1;
+    useEffect(() => {
+      console.log('lyrics: ', lyrics);
+    }, [lyrics])
+
     // query favorites table for favorite lyrics
     useEffect(() => {
-      if (!dataFetched) {
+      if (!lyricsFetched) {
           const getFavorites = async () => {
             try {
               // get list of favorites from DB
@@ -32,13 +37,14 @@ export default function MyFavoriteLyrics() {
                 .query()
                 .eq('user_id', userId)
                 .snapshot();
+                console.log('favoritesSnapshot: ', favoritesSnapshot);
 
                 // for each favorite, get the lyric text from the song_lyrics table using the lyric_id
+                const lyricBucket = [];
                 favoritesSnapshot.forEach(favoritesRow => {
                   const lyricId = favoritesRow.data.lyric_id;
+                  //console.log('favorites data: ', favoritesRow.data);
 
-                  console.log('loop has run: ', trackLoop);
-                  trackLoop += 1;
                   // look up lyric
                   const getLyrics = async () => {
                     const lyricSnapshot = await lyricsCollection
@@ -46,15 +52,20 @@ export default function MyFavoriteLyrics() {
                       .eq('lyric_id', lyricId)
                       .snapshot();
 
+                      console.log('lyricSnapshot: ', lyricSnapshot);
+
                     // save the lyric text
                     const lyric = lyricSnapshot[0].data.lyric;
                     console.log('lyric: ', lyric);
                     // add lyric to favorites array
                     dispatch(addNewFavoriteLyrics([lyric]));
+                    lyricBucket.push(lyric);
                   }
                   getLyrics();
+
                 })
-                setDataFetched(true);
+                setLyrics(lyricBucket);
+                dispatch(updateLyricsFetched());
             } catch (error) {
               console.error('Error fetching favorite lyrics: ', error);
             }
@@ -63,7 +74,7 @@ export default function MyFavoriteLyrics() {
       getFavorites();
 
       }
-    }, [dataFetched, favoritesCollection, lyricsCollection, userId, dispatch]);
+    }, [lyricsFetched, favoritesCollection, lyricsCollection, userId]);
 
     // get the final list of favorites
     const favoriteLyrics = useSelector(state => state.lyrics.favoriteLyrics);
@@ -84,7 +95,7 @@ export default function MyFavoriteLyrics() {
       <Card.Body>
         <h2 className='text-center mb-4'>My Favorite Lyrics</h2>
           <ListGroup>
-            {favoriteLyrics.map((lyric, index) => (
+            {lyrics.map((lyric, index) => (
               <ListGroup.Item key={index}>{lyric}</ListGroup.Item>
             ))}
           </ListGroup>

@@ -8,10 +8,11 @@ export default function Homepage() {
 
   const { user } = useAuth0();
   const navigate = useNavigate();
-
+  console.log(user);
   // Redirect to dashboard if user is authenticated
   useEffect(() => {
     if (user) {
+      // think about having a loading page so it's not so uggo while auth0 checks authentication
       navigate('/dashboard');
     }
   }, [user]);
