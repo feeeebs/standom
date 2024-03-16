@@ -11,6 +11,7 @@ import UpdateProfile from '../routes/UpdateProfile';
 import AddNewLyrics from '../routes/AddNewLyrics';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateAll, updateEmail, updateFirstName, updateLastName } from '../utilities/Redux/userSlice';
+import LoadingPage from '../routes/LoadingPage';
 
 function App() {
 
@@ -154,12 +155,15 @@ const insertNewUser = async () => {
 
 
   // Routing
-  // TO DO -- properly update default route based on authentication
   const router = createBrowserRouter([
     {
       path: "/",
       element: <Homepage />,
       errorElement: <ErrorPage />,
+    },
+    {
+      path: "/loading",
+      element: <LoadingPage userInfo={userInformation} />,
     },
     {
       path: "/dashboard",
@@ -177,9 +181,15 @@ const insertNewUser = async () => {
       path: "/add-lyrics",
       element: <PrivateRoute><AddNewLyrics userInfo={userInformation} /></PrivateRoute>,
     },
+
   ]);
 
+  // If auth0 is checking authentication, return loading page
+  if (isLoading) {
+    return <LoadingPage />;
+  }
 
+  // Otherwise route accordingly
   return (
     <RouterProvider router={router} />
   )
