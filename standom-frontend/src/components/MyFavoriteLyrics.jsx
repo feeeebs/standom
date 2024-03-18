@@ -77,7 +77,7 @@ export default function MyFavoriteLyrics() {
     }, [lyricsFetched, favoritesCollection, lyricsCollection, userId]);
 
     // get the final list of favorites
-    //const favoriteLyrics = useSelector(state => state.lyrics.favoriteLyrics);
+    const favoriteLyrics = useSelector(state => state.lyrics.favoriteLyrics);
 
 
     async function handleNav() {

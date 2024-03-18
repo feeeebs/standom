@@ -5,8 +5,8 @@ import { useCollection } from '@squidcloud/react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addAlbum } from '../utilities/Redux/albumSlice';
 import NavigationBar from '../components/NavigationBar';
-import { Search } from '../components/Search';
-import { IndexData } from '../utilities/Algolia/indexData';
+import Search from '../utilities/Algolia/Search';
+import { IndexData } from '../utilities/Algolia/IndexData';
 
 
 // TO DO -- add disabled logic to Submit button
@@ -122,7 +122,11 @@ export default function AddNewLyrics() {
     // TO DO -- ADD <SEARCH /> BACK IN WHEN I FIGURE OUT HOW IT WORKS!
   return (
     <>
+        <IndexData />
         <NavigationBar />
+        <div>
+            <Search />
+        </div>
         <Card>
             <Card.Body>
                 <Form onSubmit={handleSubmit}>

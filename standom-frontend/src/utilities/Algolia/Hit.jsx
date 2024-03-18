@@ -1,19 +1,13 @@
 import { Highlight } from "react-instantsearch";
-import { getPropertyByPath } from 'instantsearch.js/es/lib/utils';
 
 export const Hit = ({ hit }) => {
+  // TO DO: add album art for each hit using <img src={hit.album_art} />
+  // TO DO: add song title for each hit as <h1>{hit.title}</h1>
+
+
   return (
     <article>
-        <img src={hit.poster_path} />
-        <div className="hit-title">
-            <Highlight attribute="title" hit={hit} />
-        </div>
-        <div className="hit-release_date">
-            <Highlight attribute="release_date" hit={hit} />
-        </div>
-        <div className="hit-original_language">
-            <Highlight attribute="original_language" hit={hit} />
-        </div>
+        <Highlight attribute='lyric' hit={hit} />
     </article>
   );
 };
