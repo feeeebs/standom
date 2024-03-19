@@ -5,9 +5,12 @@ export const Hit = ({ hit }) => {
   // TO DO: add song title for each hit as <h1>{hit.title}</h1>
 
 
+
   return (
     <article>
-        <Highlight attribute='lyric' hit={hit} />
+        <h6><Highlight attribute='lyric' hit={hit} /></h6>
+        <p>{hit.song_title}</p>
+        <p>{hit.album_title}</p>
     </article>
   );
 };

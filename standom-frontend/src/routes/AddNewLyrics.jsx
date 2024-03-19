@@ -120,6 +120,7 @@ export default function AddNewLyrics() {
     // }, [searchQuery])
     
     // TO DO -- ADD <SEARCH /> BACK IN WHEN I FIGURE OUT HOW IT WORKS!
+    //        <IndexData />
   return (
     <>
         <IndexData />
