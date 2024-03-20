@@ -23,11 +23,7 @@ export function IndexData() {
                 const songsWithLyricsAndAlbums = [];
                
                 lyricSnapshot.forEach(lyricRow => {
-                    const { song_id, lyric_id, lyric } = lyricRow;
-
-                    // Normalize lyric text by replacing /n with actual line breaks
-                    const normalizedLyric = lyric.replace(/\n/g, `\n`);
-                    console.log('NORMALIZED LYRIC: ', normalizedLyric);
+                    const { song_id, lyric_id } = lyricRow;
 
                     const song = songsSnapshot.find(songRow => songRow.song_id === song_id);
                     if (!song) return; // If song isn't found, skip
@@ -44,7 +40,7 @@ export function IndexData() {
                     // Combine data
                     const songsWithLyricAndAlbums = {
                         song: songWithObjectId,
-                        lyric: { ...lyricRow, lyric: normalizedLyric },
+                        lyric: lyricRow,
                         album
                     };
                     songsWithLyricsAndAlbums.push(songsWithLyricAndAlbums);
@@ -62,9 +58,6 @@ export function IndexData() {
 
     }, []);
 
-    // await index.saveObjects(songs, {
-    //     autoGenerateObjectIDIfNotExist: true,
-    // });
 
     useEffect(() => {
         const index = client.initIndex('song_lyrics');
