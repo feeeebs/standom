@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import client from './algoliaConfig';
 import { useCollection } from '@squidcloud/react';
+import { useSelector } from 'react-redux';
 
 export function IndexData() {
     const [songs, setSongs] = useState([]);
     const lyricCollection = useCollection('song_lyrics', 'postgres_id');
     const songsCollection = useCollection('songs', 'postgres_id');
     const albumsCollection = useCollection('albums', 'postgres_id');
+    const userId = useSelector(state => state.user.userInfo.id);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -21,7 +23,11 @@ export function IndexData() {
                 const songsWithLyricsAndAlbums = [];
                
                 lyricSnapshot.forEach(lyricRow => {
-                    const { song_id, lyric_id } = lyricRow
+                    const { song_id, lyric_id, lyric } = lyricRow;
+
+                    // Normalize lyric text by replacing /n with actual line breaks
+                    const normalizedLyric = lyric.replace(/\n/g, `\n`);
+                    console.log('NORMALIZED LYRIC: ', normalizedLyric);
 
                     const song = songsSnapshot.find(songRow => songRow.song_id === song_id);
                     if (!song) return; // If song isn't found, skip
@@ -38,7 +44,7 @@ export function IndexData() {
                     // Combine data
                     const songsWithLyricAndAlbums = {
                         song: songWithObjectId,
-                        lyric: lyricRow,
+                        lyric: { ...lyricRow, lyric: normalizedLyric },
                         album
                     };
                     songsWithLyricsAndAlbums.push(songsWithLyricAndAlbums);
@@ -91,8 +97,10 @@ export function IndexData() {
         if (songs.length > 0) {
             console.log('running indexData');
             indexData();
+            
         }
-    }, [songs]);
+    }, [songs, userId]);
+
 
 
   return null;
