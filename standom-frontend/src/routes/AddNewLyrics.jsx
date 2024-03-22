@@ -16,11 +16,13 @@ export default function AddNewLyrics({ userInfo }) {
     const songCollection = useCollection('songs', 'postgres_id'); 
     const lyricCollection = useCollection('song_lyrics', 'postgres_id');
     const userFavoritesCollection = useCollection('users_favorite_lyrics', 'postgres_id');
+    const lyricTagsCollection = useCollection('lyric_tags', 'postgres_id');
 
     // Store lyric, song, album
     const [lyric, setLyric] = useState('');
     const [song, setSong] = useState('');
     const [album, setAlbum] = useState('');
+    const [lyricTags, setLyricTags] = useState([]);
 
     useEffect(() => {
         const getData = async () => {
@@ -53,6 +55,16 @@ export default function AddNewLyrics({ userInfo }) {
                 const album_title = albumSnapshot[0].album_title;
                 // console.log('ALBUM: ', album_title);
                 setAlbum(album_title);
+
+                // fetch lyric tags
+                const lyricTagsSnapshot = await lyricTagsCollection
+                    .query()
+                    .dereference()
+                    .snapshot();
+                // console.log('lyric tags: ', lyricTagsSnapshot);
+                const tags = lyricTagsSnapshot.map(tagRow => tagRow.tag);
+                setLyricTags(tags);
+
             } catch (error) {
                 console.error('Error fetching data: ', error);
             }
@@ -120,40 +132,6 @@ export default function AddNewLyrics({ userInfo }) {
 //             </Form.Group>
 //         </Col>
 //     </Row>
-//     <h5>Why do you love it?</h5>
-//     {['checkbox'].map((type) => (
-//         <div key={`inline-${type}`} className='mb-3'>
-//             <Form.Check
-//                 inline
-//                 label="Love"
-//                 name='love'
-//                 type={type}
-//                 id={`inline-${type}-1`}
-//             />
-//             <Form.Check
-//                 inline
-//                 label="Heartbreak"
-//                 name='heartbreak'
-//                 type={type}
-//                 id={`inline-${type}-1`}
-//             />
-//             <Form.Check
-//                 inline
-//                 label="Catharsis"
-//                 name='catharsis'
-//                 type={type}
-//                 id={`inline-${type}-1`}
-//             />
-//             <Form.Check
-//                 inline
-//                 label="Nostalgia"
-//                 name='nostalgia'
-//                 type={type}
-//                 id={`inline-${type}-1`}
-//             />
-//         </div>
-//     ))}
-//     <Button className='w-100 mt-4' type="submit">Add Lyrics</Button>
 // </Form>
 
 
@@ -172,39 +150,19 @@ export default function AddNewLyrics({ userInfo }) {
                         {lyric}
                     </Card.Text>
                     <h5>Why do you love it?</h5>
-                    {['checkbox'].map((type) => (
-                        <div key={`inline-${type}`} className='mb-3'>
+                        {lyricTags.map((tag, index) => (
                             <Form.Check
+                                key={index}
                                 inline
-                                label="Love"
-                                name='love'
-                                type={type}
-                                id={`inline-${type}-1`}
+                                label={tag}
+                                name={tag}
+                                type='checkbox'
+                                id={`inline-checkbox-${index}`}
                             />
-                            <Form.Check
-                                inline
-                                label="Heartbreak"
-                                name='heartbreak'
-                                type={type}
-                                id={`inline-${type}-1`}
-                            />
-                            <Form.Check
-                                inline
-                                label="Catharsis"
-                                name='catharsis'
-                                type={type}
-                                id={`inline-${type}-1`}
-                            />
-                            <Form.Check
-                                inline
-                                label="Nostalgia"
-                                name='nostalgia'
-                                type={type}
-                                id={`inline-${type}-1`}
-                            />
-                        </div>
-                    ))}
+                        ))}
+                    <div>
                     <Button onClick={handleSubmit}>Add New Lyric</Button>
+                    </div>
             </Card.Body>
         </Card>
     </>
