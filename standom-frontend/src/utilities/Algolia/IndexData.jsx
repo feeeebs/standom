@@ -44,7 +44,7 @@ export function IndexData() {
                         album
                     };
                     songsWithLyricsAndAlbums.push(songsWithLyricAndAlbums);
-                    console.log('SONG ARRAY??', songsWithLyricsAndAlbums);
+                    // console.log('SONG ARRAY??', songsWithLyricsAndAlbums);
   
                     setSongs(songsWithLyricsAndAlbums);
                 })
@@ -61,7 +61,7 @@ export function IndexData() {
 
     useEffect(() => {
         const index = client.initIndex('song_lyrics');
-        console.log('SONGS: ', songs);
+        // console.log('SONGS: ', songs);
 
         const indexData = async () => {
             try {
@@ -88,7 +88,7 @@ export function IndexData() {
         };
     
         if (songs.length > 0) {
-            console.log('running indexData');
+            // console.log('running indexData');
             indexData();
             
         }

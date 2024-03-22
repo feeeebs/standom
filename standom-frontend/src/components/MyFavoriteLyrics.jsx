@@ -96,6 +96,7 @@ export default function MyFavoriteLyrics() {
     }, [lyricsFetched, favoritesCollection, lyricsCollection, userId]);
 
     // WHY DOES REMOVING THIS UNUSED VARIABLE / USESELECTOR CALL BREAK THINGS???
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const favoriteLyrics = useSelector(state => state.lyrics.favoriteLyrics);
 
 
@@ -103,7 +104,7 @@ export default function MyFavoriteLyrics() {
   // TO DO: FILTER OUT FAVORITES THAT HAVE ALREADY BEEN ADDED OR MAKE SURE IT DOESN'T ADD DUPE ENTRIES
   // TO DO: DISPLAY ALBUM ART ON SONG CARD
   // TO DO: MAKE IT PRETTIER
-  // TO DO: INCLUDE "WHY YOU LOVE IT" TAGS
+  // TO DO: INCLUDE "WHY YOU LOVE IT" TAGS - use badges to display?
   
   return (
     <Card>

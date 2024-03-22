@@ -1,19 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom';
-import { Alert, Button, Form, Col, Row, Card } from 'react-bootstrap'
+import { Button, Form, Card } from 'react-bootstrap'
 import { useCollection } from '@squidcloud/react';
 import NavigationBar from '../components/NavigationBar';
 import { IndexData } from '../utilities/Algolia/IndexData';
 import { v4 as uuidv4 } from 'uuid';
 
-// TO DO -- add disabled logic to Submit button
-// TO DO -- make it so song only fills in once there is a real match -- maybe buttons with song snippets?
-// TO DO -- save the "why you love it" tags
-
 export default function AddNewLyrics({ userInfo }) {
-    // USER SELECTS ALBUM AND/OR SONG
-    // USER CAN PICK FROM LIST OF LYRICS
-    // ON SUBMISSION, SAVES LYRIC ID TO USERS_FAVORITE_LYRICS DB
     const userId = userInfo.id;
     const { lyricId } = useParams();
     const navigate = useNavigate();
@@ -24,8 +17,7 @@ export default function AddNewLyrics({ userInfo }) {
     const lyricCollection = useCollection('song_lyrics', 'postgres_id');
     const userFavoritesCollection = useCollection('users_favorite_lyrics', 'postgres_id');
 
-    // Get lyric, song, album to display
-
+    // Store lyric, song, album
     const [lyric, setLyric] = useState('');
     const [song, setSong] = useState('');
     const [album, setAlbum] = useState('');
@@ -49,7 +41,7 @@ export default function AddNewLyrics({ userInfo }) {
                     .dereference()
                     .snapshot();
                 const { song_title, album_id } = songSnapshot[0];
-                console.log('SONG: ', song_title);
+                // console.log('SONG: ', song_title);
                 setSong(song_title);
 
                 // fetch album data
@@ -59,7 +51,7 @@ export default function AddNewLyrics({ userInfo }) {
                     .dereference()
                     .snapshot();
                 const album_title = albumSnapshot[0].album_title;
-                console.log('ALBUM: ', album_title);
+                // console.log('ALBUM: ', album_title);
                 setAlbum(album_title);
             } catch (error) {
                 console.error('Error fetching data: ', error);
@@ -69,21 +61,9 @@ export default function AddNewLyrics({ userInfo }) {
     }, []);
 
 
-
-/////////// OLD STUFF //////////////////////
-    const [error, setError] = useState()
-
-    const favoriteLyricsRef = useRef()
-    const favoriteSongRef = useRef()
-////////////////////////////////////////////
-    
-
     async function handleSubmit(e) {
         e.preventDefault()
         console.log('running handleSubmit');
-        if (!favoriteSongRef.current.value || !favoriteLyricsRef.current.value) {
-             return setError('Fill in lyrics and song title')
-        }
 
         const insertNewFavorite = async () => {
             // generate unique id for favorite
@@ -96,16 +76,89 @@ export default function AddNewLyrics({ userInfo }) {
             .then(() => console.log('Inserted new user favorite'))
             .catch((error) => console.error('Error inserting new user favorite: ', error));
         }
-        insertNewFavorite();
 
-        // TO DO: update writeUserData function with new one
-        // writeUserData(currentUser.uid, favoriteSongRef.current.value, favoriteLyricsRef.current.value)
+        insertNewFavorite();
         navigate("/dashboard")
   
     }    
 
+
+    // old new lyrics form:
+//     <Form onSubmit={handleSubmit}>
+//     <h2 className='text-center mb-4'>Add a Lyric</h2>
+//     {error && <Alert variant="danger">{error}</Alert>}
+
+//     <Form.Group className='mb-3' id="favoriteLyrics">
+//         <Form.Label><h5>Lyrics</h5></Form.Label>
+//         <Form.Control 
+//             as="textarea" 
+//             value={lyric}
+//             ref={favoriteLyricsRef}
+//             placeholder="It's a love story, baby just say yes"
+//         />
+//     </Form.Group>
+//     <Row>
+//         <Col>
+//             <Form.Group className='mb-3' controlId='lyricInputSongName'>
+//                 <Form.Label><h5>Song</h5></Form.Label>
+//                 <Form.Control 
+//                     value={song}
+//                     ref={favoriteSongRef}
+//                     placeholder='Love Story'
+//                     readOnly 
+//                 />
+//             </Form.Group>
+//         </Col>
+//         <Col>
+//             <Form.Group className='mb-3' controlId='lyricInputAlbum'>
+//                 <Form.Label><h5>Album</h5></Form.Label>
+//                 <Form.Control 
+//                     value={album}
+//                     placeholder='Fearless'
+//                     readOnly
+//                 />
+//             </Form.Group>
+//         </Col>
+//     </Row>
+//     <h5>Why do you love it?</h5>
+//     {['checkbox'].map((type) => (
+//         <div key={`inline-${type}`} className='mb-3'>
+//             <Form.Check
+//                 inline
+//                 label="Love"
+//                 name='love'
+//                 type={type}
+//                 id={`inline-${type}-1`}
+//             />
+//             <Form.Check
+//                 inline
+//                 label="Heartbreak"
+//                 name='heartbreak'
+//                 type={type}
+//                 id={`inline-${type}-1`}
+//             />
+//             <Form.Check
+//                 inline
+//                 label="Catharsis"
+//                 name='catharsis'
+//                 type={type}
+//                 id={`inline-${type}-1`}
+//             />
+//             <Form.Check
+//                 inline
+//                 label="Nostalgia"
+//                 name='nostalgia'
+//                 type={type}
+//                 id={`inline-${type}-1`}
+//             />
+//         </div>
+//     ))}
+//     <Button className='w-100 mt-4' type="submit">Add Lyrics</Button>
+// </Form>
+
+
     // TO DO: ADD ALBUM ART TO TOP OF CARD
-    // TO DO: ADD LINE BREAKS BACK INTO LYRIC SINCE I'M PULLING IT BACK OUT FROM DB
+    // TO DO: WHY YOU LOVE IT TAGS
   return (
     <>
         <IndexData />
@@ -115,7 +168,7 @@ export default function AddNewLyrics({ userInfo }) {
             <Card.Body>
                 <Card.Title>{song}</Card.Title>
                     <Card.Subtitle>{album}</Card.Subtitle>
-                    <Card.Text>
+                    <Card.Text style={{ whiteSpace: 'pre-line' }}>
                         {lyric}
                     </Card.Text>
                     <h5>Why do you love it?</h5>
@@ -154,79 +207,6 @@ export default function AddNewLyrics({ userInfo }) {
                     <Button onClick={handleSubmit}>Add New Lyric</Button>
             </Card.Body>
         </Card>
-
-                <Form onSubmit={handleSubmit}>
-                    <h2 className='text-center mb-4'>Add a Lyric</h2>
-                    {error && <Alert variant="danger">{error}</Alert>}
-
-                    <Form.Group className='mb-3' id="favoriteLyrics">
-                        <Form.Label><h5>Lyrics</h5></Form.Label>
-                        <Form.Control 
-                            as="textarea" 
-                            value={lyric}
-                            ref={favoriteLyricsRef}
-                            placeholder="It's a love story, baby just say yes"
-                        />
-                    </Form.Group>
-                    <Row>
-                        <Col>
-                            <Form.Group className='mb-3' controlId='lyricInputSongName'>
-                                <Form.Label><h5>Song</h5></Form.Label>
-                                <Form.Control 
-                                    value={song}
-                                    ref={favoriteSongRef}
-                                    placeholder='Love Story'
-                                    readOnly 
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col>
-                            <Form.Group className='mb-3' controlId='lyricInputAlbum'>
-                                <Form.Label><h5>Album</h5></Form.Label>
-                                <Form.Control 
-                                    value={album}
-                                    placeholder='Fearless'
-                                    readOnly
-                                />
-                            </Form.Group>
-                        </Col>
-                    </Row>
-                    <h5>Why do you love it?</h5>
-                    {['checkbox'].map((type) => (
-                        <div key={`inline-${type}`} className='mb-3'>
-                            <Form.Check
-                                inline
-                                label="Love"
-                                name='love'
-                                type={type}
-                                id={`inline-${type}-1`}
-                            />
-                            <Form.Check
-                                inline
-                                label="Heartbreak"
-                                name='heartbreak'
-                                type={type}
-                                id={`inline-${type}-1`}
-                            />
-                            <Form.Check
-                                inline
-                                label="Catharsis"
-                                name='catharsis'
-                                type={type}
-                                id={`inline-${type}-1`}
-                            />
-                            <Form.Check
-                                inline
-                                label="Nostalgia"
-                                name='nostalgia'
-                                type={type}
-                                id={`inline-${type}-1`}
-                            />
-                        </div>
-                    ))}
-                    <Button className='w-100 mt-4' type="submit">Add Lyrics</Button>
-                </Form>
-
     </>
   )
 }
