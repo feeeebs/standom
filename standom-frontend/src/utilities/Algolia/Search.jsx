@@ -7,11 +7,22 @@ import { useSelector } from "react-redux";
 import EmptyQueryBoundary from "./EmptyQueryBoundary";
 import AddLineBreaks from "./TransformData";
 import NoResultsBoundary from "./NoResultsBoundary";
+import aa from "search-insights";
+
+
 
 export default function Search() {
   const userId = useSelector(state => state.user.userInfo.id);
-  // TO DO: add refinement list once albums and song titles are indexed
 
+  aa('init', {
+    appId: 'CP65BSPR37',
+    apiKey: 'feba20fc91fc49627d18750bad32e87b'
+  })
+  
+  aa('setAuthenticatedUserToken', userId)
+
+
+    // TO DO: add refinement lists / filters for albums and songs
   return (
     <div>
       <InstantSearch 
@@ -19,7 +30,7 @@ export default function Search() {
         searchClient={algoliaClient} 
         insights={true}
       >
-        <Configure userToken={userId} />
+        <Configure userToken={userId} clickAnalytics />
           <SearchBox />
             <EmptyQueryBoundary fallback={null}>
               <NoResultsBoundary fallback={<NoResults />}>

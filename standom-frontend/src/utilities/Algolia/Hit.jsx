@@ -1,11 +1,29 @@
+import { Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+//import AddNewFavoriteLyricsToDb from "../../components/AddNewFavoriteLyricsToDb";
+
+
 export const Hit = ({ hit }) => {
+
+  const navigate = useNavigate();
+
+  const handleLyricClick = () => {
+    console.log('running handleLyricClick');
+    navigate(`/add-lyrics/${hit.objectID}`);
+  }
   
   // TO DO: add album art for each hit using <img src={hit.album_art} />
   return (
-    <article>
+    <div>
         <h6 dangerouslySetInnerHTML={{__html: hit.lyric}}></h6>
         <p>{hit.song_title}</p>
         <p>{hit.album_title}</p>
-    </article>
+        <Button onClick={handleLyricClick}
+          //onClick={() => sendEvent('click', hit, 'Song Added to Favorites')}
+          //onClick={AddNewFavoriteLyricsToDb(hit.lyric.lyric_id)}
+          >Add to Favorites</Button>
+    </div>
   );
 };
+
+// ML2EM12EABS

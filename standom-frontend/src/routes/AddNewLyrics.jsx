@@ -1,154 +1,170 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Alert, Button, Form, Col, Row, Card } from 'react-bootstrap'
 import { useCollection } from '@squidcloud/react';
-import { useDispatch, useSelector } from 'react-redux';
-import { addAlbum } from '../utilities/Redux/albumSlice';
 import NavigationBar from '../components/NavigationBar';
-import Search from '../utilities/Algolia/Search';
 import { IndexData } from '../utilities/Algolia/IndexData';
-
+import { v4 as uuidv4 } from 'uuid';
 
 // TO DO -- add disabled logic to Submit button
 // TO DO -- make it so song only fills in once there is a real match -- maybe buttons with song snippets?
 // TO DO -- save the "why you love it" tags
 
-export default function AddNewLyrics() {
+export default function AddNewLyrics({ userInfo }) {
     // USER SELECTS ALBUM AND/OR SONG
     // USER CAN PICK FROM LIST OF LYRICS
     // ON SUBMISSION, SAVES LYRIC ID TO USERS_FAVORITE_LYRICS DB
+    const userId = userInfo.id;
+    const { lyricId } = useParams();
+    const navigate = useNavigate();
+
+    // DB references
+    const albumCollection = useCollection('albums', 'postgres_id');
+    const songCollection = useCollection('songs', 'postgres_id'); 
+    const lyricCollection = useCollection('song_lyrics', 'postgres_id');
+    const userFavoritesCollection = useCollection('users_favorite_lyrics', 'postgres_id');
+
+    // Get lyric, song, album to display
+
+    const [lyric, setLyric] = useState('');
+    const [song, setSong] = useState('');
+    const [album, setAlbum] = useState('');
+
+    useEffect(() => {
+        const getData = async () => {
+            try {
+                // fetch lyric data
+                const lyricSnapshot = await lyricCollection
+                    .query()
+                    .eq('lyric_id', parseInt(lyricId))
+                    .dereference()
+                    .snapshot();
+                const { lyric, song_id } = lyricSnapshot[0];
+                setLyric(lyric);
+                
+                // fetch song data
+                const songSnapshot = await songCollection
+                    .query()
+                    .eq('song_id', song_id)
+                    .dereference()
+                    .snapshot();
+                const { song_title, album_id } = songSnapshot[0];
+                console.log('SONG: ', song_title);
+                setSong(song_title);
+
+                // fetch album data
+                const albumSnapshot = await albumCollection
+                    .query()
+                    .eq('album_id', album_id)
+                    .dereference()
+                    .snapshot();
+                const album_title = albumSnapshot[0].album_title;
+                console.log('ALBUM: ', album_title);
+                setAlbum(album_title);
+            } catch (error) {
+                console.error('Error fetching data: ', error);
+            }
+        }
+        getData();
+    }, []);
+
 
 
 /////////// OLD STUFF //////////////////////
     const [error, setError] = useState()
-    const [songs, setSongs] = useState()
-    const [selectedSong, setSelectedSong] = useState({ title: '', album: '', lyrics: ''})
-    const [searchQuery, setSearchQuery] = useState("")
-    const [searchResults, setSearchResults] = useState([])
+
     const favoriteLyricsRef = useRef()
     const favoriteSongRef = useRef()
 ////////////////////////////////////////////
     
-    const dispatch = useDispatch();
-    const albums = useSelector(state => state.albums.albumList);
-
-    const albumCollection = useCollection('albums', 'postgres_id');
-    const songCollection = useCollection('songs', 'postgres_id'); 
-    const lyricCollection = useCollection('song_lyrics', 'postgres_id'); // DB reference to song lyric snippets
-
-    // Get full list of albums from DB
-    useEffect(() => {
-        const getAlbums = async () => {
-            try {
-                const createAlbumList = [];
-                const albumSnapshot = await albumCollection.query().snapshot();
-                albumSnapshot.forEach(albumRow => {
-                    const { album_id, album_title } = albumRow.data;
-                    const albumObject = { album_id: album_id, album_title: album_title };
-                    createAlbumList.push(albumObject);
-                })
-                
-                dispatch(addAlbum(createAlbumList));
-            } catch (error) {
-                console.error('Error fetching albums: ', error);
-            }
-        };
-        getAlbums();
-    
-    }, []);
-    
-    // const lyricSnapshot = await lyricCollection.query().snapshot();
-    // lyricSnapshot.forEach((snapshotRow) => {
-    //     const { lyric_id, song_id, lyric } = snapshotRow.data;
-    // })
-    
-
-    const navigate = useNavigate();
-
-    // TO DO: Update how you write lyric data to postgres
-    // function writeUserData(userId, song, lyrics) {
-    //     push(ref(database, 'users/' + userId + '/favorites'), {
-    //         favorite_song: song,
-    //         favorite_lyrics: lyrics
-    //     })
-    // }
 
     async function handleSubmit(e) {
         e.preventDefault()
-
+        console.log('running handleSubmit');
         if (!favoriteSongRef.current.value || !favoriteLyricsRef.current.value) {
              return setError('Fill in lyrics and song title')
         }
+
+        const insertNewFavorite = async () => {
+            // generate unique id for favorite
+            const favoriteId = uuidv4();
+            await userFavoritesCollection.doc({ favorite_id: favoriteId }).insert({
+                favorite_id: favoriteId,
+                user_id: userId,
+                lyric_id: parseInt(lyricId)
+            })
+            .then(() => console.log('Inserted new user favorite'))
+            .catch((error) => console.error('Error inserting new user favorite: ', error));
+        }
+        insertNewFavorite();
+
         // TO DO: update writeUserData function with new one
         // writeUserData(currentUser.uid, favoriteSongRef.current.value, favoriteLyricsRef.current.value)
         navigate("/dashboard")
   
     }    
 
-    function handleAlbumSelect(e) {
-        e.preventDefault();
-        console.log(e.currentTarget.value);
-    }
-
-
-    // TO DO: Redo with references to new DB
-    // const searchDatabase = async () => {
-    //     try {
-    //         const snapshot = await get(songsRef)
-    //         const allSongs = snapshot.val()
-
-    //         // Filter songs based on the search query
-    //         const filteredSongs = allSongs.filter((song) =>
-    //         song.lyrics.toLowerCase().includes(searchQuery.toLowerCase())
-    //         )
-
-    //         setSearchResults(filteredSongs)
-
-    //         // Auto-select the first song from the search results or to empty values
-    //         if (filteredSongs.length > 0) {
-    //             setSelectedSong(filteredSongs[0])
-    //         } else {
-    //             setSelectedSong({ title: '', album: '', lyrics: ''})
-    //         }
-    //     } catch(error) {
-    //         console.error('Error searching database:', error)
-    //     }
-    // }
-
-    // useEffect(() => {
-    //     searchDatabase();
-    // }, [searchQuery])
-    
-    // TO DO -- ADD <SEARCH /> BACK IN WHEN I FIGURE OUT HOW IT WORKS!
-    //        <IndexData />
+    // TO DO: ADD ALBUM ART TO TOP OF CARD
+    // TO DO: ADD LINE BREAKS BACK INTO LYRIC SINCE I'M PULLING IT BACK OUT FROM DB
   return (
     <>
         <IndexData />
         <NavigationBar />
-        <div>
-            <Search />
-        </div>
         <Card>
+            <Card.Header>New Lyric</Card.Header>
             <Card.Body>
+                <Card.Title>{song}</Card.Title>
+                    <Card.Subtitle>{album}</Card.Subtitle>
+                    <Card.Text>
+                        {lyric}
+                    </Card.Text>
+                    <h5>Why do you love it?</h5>
+                    {['checkbox'].map((type) => (
+                        <div key={`inline-${type}`} className='mb-3'>
+                            <Form.Check
+                                inline
+                                label="Love"
+                                name='love'
+                                type={type}
+                                id={`inline-${type}-1`}
+                            />
+                            <Form.Check
+                                inline
+                                label="Heartbreak"
+                                name='heartbreak'
+                                type={type}
+                                id={`inline-${type}-1`}
+                            />
+                            <Form.Check
+                                inline
+                                label="Catharsis"
+                                name='catharsis'
+                                type={type}
+                                id={`inline-${type}-1`}
+                            />
+                            <Form.Check
+                                inline
+                                label="Nostalgia"
+                                name='nostalgia'
+                                type={type}
+                                id={`inline-${type}-1`}
+                            />
+                        </div>
+                    ))}
+                    <Button onClick={handleSubmit}>Add New Lyric</Button>
+            </Card.Body>
+        </Card>
+
                 <Form onSubmit={handleSubmit}>
                     <h2 className='text-center mb-4'>Add a Lyric</h2>
                     {error && <Alert variant="danger">{error}</Alert>}
-
-                    <div className='mb-3'>
-                        <Form.Select onClick={handleAlbumSelect}>
-                            {albums.map((album, index) => (
-                                <option key={index} value={album.album_id}>{album.album_title}</option>
-                            ))}
-                        </Form.Select>
-                    </div>
 
                     <Form.Group className='mb-3' id="favoriteLyrics">
                         <Form.Label><h5>Lyrics</h5></Form.Label>
                         <Form.Control 
                             as="textarea" 
-                            value={searchQuery}
+                            value={lyric}
                             ref={favoriteLyricsRef}
-                            onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="It's a love story, baby just say yes"
                         />
                     </Form.Group>
@@ -157,7 +173,7 @@ export default function AddNewLyrics() {
                             <Form.Group className='mb-3' controlId='lyricInputSongName'>
                                 <Form.Label><h5>Song</h5></Form.Label>
                                 <Form.Control 
-                                    value={searchResults.length > 0 && searchQuery !== '' ? selectedSong.title : ''}
+                                    value={song}
                                     ref={favoriteSongRef}
                                     placeholder='Love Story'
                                     readOnly 
@@ -168,7 +184,7 @@ export default function AddNewLyrics() {
                             <Form.Group className='mb-3' controlId='lyricInputAlbum'>
                                 <Form.Label><h5>Album</h5></Form.Label>
                                 <Form.Control 
-                                    value={searchResults.length > 0 && searchQuery !== '' ? selectedSong.album : ''}
+                                    value={album}
                                     placeholder='Fearless'
                                     readOnly
                                 />
@@ -210,8 +226,7 @@ export default function AddNewLyrics() {
                     ))}
                     <Button className='w-100 mt-4' type="submit">Add Lyrics</Button>
                 </Form>
-            </Card.Body>
-        </Card>
+
     </>
   )
 }

@@ -4,6 +4,7 @@ import { Button, Card, ListGroup } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { addNewFavoriteLyrics, updateLyricsFetched } from '../utilities/Redux/lyricsSlice';
+import Search from '../utilities/Algolia/Search';
 
 
 // TO DO -- reformat into a table and make it prettier
@@ -100,6 +101,7 @@ export default function MyFavoriteLyrics() {
             ))}
           </ListGroup>
       </Card.Body>
+      <Search />
       <Button onClick={handleNav}>Add more lyrics</Button>
     </Card>
   )

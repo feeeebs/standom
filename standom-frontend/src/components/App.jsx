@@ -178,7 +178,7 @@ const insertNewUser = async () => {
       element: <PrivateRoute><UpdateProfile userInfo={userInformation} /></PrivateRoute>,
     },
     {
-      path: "/add-lyrics",
+      path: "/add-lyrics/:lyricId",
       element: <PrivateRoute><AddNewLyrics userInfo={userInformation} /></PrivateRoute>,
     },
 
