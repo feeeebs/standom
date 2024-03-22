@@ -1,21 +1,13 @@
 import { useCollection } from '@squidcloud/react';
 import React, { useState, useEffect } from 'react'
-import { Button, Card, ListGroup } from 'react-bootstrap';
+import { Card, ListGroup } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import { addNewFavoriteLyrics, updateLyricsFetched } from '../utilities/Redux/lyricsSlice';
 import Search from '../utilities/Algolia/Search';
 
-
-// TO DO -- reformat into a table and make it prettier
-// TO DO -- include "why you love it tags"
-
 export default function MyFavoriteLyrics() {
-// get array of current user's favorite lyrics from database
-    const [error, setError] = useState();
-    const [lyrics, setLyrics] = useState([]);
 
-    const navigate = useNavigate();
+    const [lyricInfo, setLyricInfo] = useState([]);
 
     const dispatch = useDispatch();
     const userId = useSelector(state => state.user.userInfo.id);
@@ -23,49 +15,75 @@ export default function MyFavoriteLyrics() {
 
     const lyricsCollection = useCollection('song_lyrics', 'postgres_id');
     const favoritesCollection = useCollection('users_favorite_lyrics', 'postgres_id');
+    const songsCollection = useCollection('songs', 'postgres_id');
+    const albumsCollection = useCollection('albums', 'postgres_id');
 
     useEffect(() => {
-      console.log('lyrics: ', lyrics);
-    }, [lyrics])
+      console.log('lyric info: ', lyricInfo);
 
-    // query favorites table for favorite lyrics
+    }, [lyricInfo])
+
+    // queries to fetch lyric, song, and album data for user's favorites
     useEffect(() => {
       if (!lyricsFetched) {
           const getFavorites = async () => {
             try {
-              // get list of favorites from DB
+              // get list of favorites
               const favoritesSnapshot = await favoritesCollection
                 .query()
                 .eq('user_id', userId)
+                .dereference()
                 .snapshot();
-                console.log('favoritesSnapshot: ', favoritesSnapshot);
+                // console.log('favoritesSnapshot: ', favoritesSnapshot);
 
-                // for each favorite, get the lyric text from the song_lyrics table using the lyric_id
-                const lyricBucket = [];
+                // array to stage lyric data before updating state
+                const newLyricBucket = [];
+
                 favoritesSnapshot.forEach(favoritesRow => {
-                  const lyricId = favoritesRow.data.lyric_id;
+                  const lyricId = favoritesRow.lyric_id;
                   //console.log('favorites data: ', favoritesRow.data);
 
-                  // look up lyric
+                  // look up lyric data based on user's specific list of favorites
                   const getLyrics = async () => {
                     const lyricSnapshot = await lyricsCollection
                       .query()
                       .eq('lyric_id', lyricId)
+                      .dereference()
                       .snapshot();
+                    const { lyric, song_id } = lyricSnapshot[0];
+                    // console.log('lyric: ', lyric);
 
-                      console.log('lyricSnapshot: ', lyricSnapshot);
+                    const songSnapshot = await songsCollection
+                      .query()
+                      .eq('song_id', song_id)
+                      .dereference()
+                      .snapshot();
+                    const { song_title , album_id } = songSnapshot[0];
+                    // console.log('song: ', song_title);
 
-                    // save the lyric text
-                    const lyric = lyricSnapshot[0].data.lyric;
-                    console.log('lyric: ', lyric);
+                    const albumSnapshot = await albumsCollection
+                      .query()
+                      .eq('album_id', album_id)
+                      .dereference()
+                      .snapshot();
+                    const album_title = albumSnapshot[0].album_title;
+                    // console.log('album: ', album_title);
+
+                    // Create object to store song title, album title, and lyric
+                    const lyricObject = {
+                      songTitle: song_title,
+                      albumTitle: album_title,
+                      lyric: lyric
+                    }
                     // add lyric to favorites array
                     dispatch(addNewFavoriteLyrics([lyric]));
-                    lyricBucket.push(lyric);
+                    newLyricBucket.push(lyricObject)
                   }
                   getLyrics();
 
                 })
-                setLyrics(lyricBucket);
+                // update state with new lyric entry
+                setLyricInfo(newLyricBucket);
                 dispatch(updateLyricsFetched());
             } catch (error) {
               console.error('Error fetching favorite lyrics: ', error);
@@ -77,32 +95,37 @@ export default function MyFavoriteLyrics() {
       }
     }, [lyricsFetched, favoritesCollection, lyricsCollection, userId]);
 
-    // get the final list of favorites
+    // WHY DOES REMOVING THIS UNUSED VARIABLE / USESELECTOR CALL BREAK THINGS???
     const favoriteLyrics = useSelector(state => state.lyrics.favoriteLyrics);
 
 
-    async function handleNav() {
-        setError('')
-        try {
-          navigate("/add-lyrics")
-        } catch {
-          setError('Something went wrong. Try again in a minute.', error)
-        }
-        
-      }
-
+  // TO DO: ALLOW USER TO DELETE FAVORITES
+  // TO DO: FILTER OUT FAVORITES THAT HAVE ALREADY BEEN ADDED OR MAKE SURE IT DOESN'T ADD DUPE ENTRIES
+  // TO DO: DISPLAY ALBUM ART ON SONG CARD
+  // TO DO: MAKE IT PRETTIER
+  // TO DO: INCLUDE "WHY YOU LOVE IT" TAGS
+  
   return (
     <Card>
       <Card.Body>
         <h2 className='text-center mb-4'>My Favorite Lyrics</h2>
+          <h5>Add New Lyrics</h5>
+          <Search />
           <ListGroup>
-            {lyrics.map((lyric, index) => (
-              <ListGroup.Item key={index}>{lyric}</ListGroup.Item>
+            {lyricInfo.map((lyric, index) => (
+              <ListGroup.Item 
+                key={index}
+                className='d-flex justify-content-between align-items-start'
+              >
+                <div className='ms-2 me-auto'>
+                    <div className='fw-bold'>{lyric.songTitle}</div>
+                    <div style={{ whiteSpace: 'pre-line' }}>{lyric.lyric}</div>
+                    <div>{lyric.albumTitle}</div>
+                  </div>
+              </ListGroup.Item>
             ))}
           </ListGroup>
       </Card.Body>
-      <Search />
-      <Button onClick={handleNav}>Add more lyrics</Button>
     </Card>
   )
 }

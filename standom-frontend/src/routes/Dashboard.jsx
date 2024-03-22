@@ -1,5 +1,5 @@
 import React from 'react';
-import { Container, Row, Col } from 'react-bootstrap';
+import { Container, Row } from 'react-bootstrap';
 import Quiz from '../components/Quiz';
 import MyFavoriteLyrics from '../components/MyFavoriteLyrics';
 import NavigationBar from '../components/NavigationBar';
@@ -19,16 +19,10 @@ export default function Dashboard({ userInfo }) {
         </div>
         <Container>
             <Row>
-                <Col>
-                    <div>
-                        <Quiz />
-                    </div>
-                </Col>
-                <Col>
-                    <div>
-                        <MyFavoriteLyrics />
-                    </div>
-                </Col>
+                <Quiz />
+            </Row>
+            <Row>
+                <MyFavoriteLyrics />
             </Row>
         </Container>
     </>
