@@ -12,7 +12,12 @@ export default function NewLyricSearch() {
         <Card>
             <h5>Search for lyrics</h5>
             <Card.Body>
-                <Search />
+                <div>
+                    Search by lyric, song, or album to find your next favorite lyric
+                </div>
+                <div>
+                    <Search />
+                </div>
             </Card.Body>
         </Card>
     </>

@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react'
 import { Button, Card, ListGroup } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { addNewFavoriteLyrics, updateLyricsFetched } from '../utilities/Redux/lyricsSlice';
-import Search from '../utilities/Algolia/Search';
 import { useNavigate } from 'react-router-dom';
+import FetchAlbumArtFromS3 from '../utilities/FetchAlbumArt';
 
 export default function MyFavoriteLyrics() {
 
@@ -69,14 +69,19 @@ export default function MyFavoriteLyrics() {
                       .eq('album_id', album_id)
                       .dereference()
                       .snapshot();
-                    const album_title = albumSnapshot[0].album_title;
-                    // console.log('album: ', album_title);
+                    const { album_title, album_art_key } = albumSnapshot[0];
+                    console.log('album: ', album_title);
+                    console.log('album art key: ', album_art_key);
+
+                    // get album art from S3
+                    const albumArtUrl = await FetchAlbumArtFromS3(album_art_key);
 
                     // Create object to store song title, album title, and lyric
                     const lyricObject = {
                       songTitle: song_title,
                       albumTitle: album_title,
-                      lyric: lyric
+                      lyric: lyric,
+                      albumArtUrl: albumArtUrl,
                     }
                     // add lyric to favorites array
                     dispatch(addNewFavoriteLyrics([lyric]));
@@ -96,7 +101,7 @@ export default function MyFavoriteLyrics() {
       getFavorites();
 
       }
-    }, [lyricsFetched, favoritesCollection, lyricsCollection, userId]);
+    }, [lyricsFetched, favoritesCollection, lyricsCollection, userId, lyricInfo]);
 
     // WHY DOES REMOVING THIS UNUSED VARIABLE / USESELECTOR CALL BREAK THINGS???
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -129,7 +134,17 @@ export default function MyFavoriteLyrics() {
                 <div className='ms-2 me-auto'>
                     <div className='fw-bold'>{lyric.songTitle}</div>
                     <div style={{ whiteSpace: 'pre-line' }}>{lyric.lyric}</div>
-                    <div>{lyric.albumTitle}</div>
+                  </div>
+                  <div>
+                      {lyric.albumArtUrl && (
+                      <div>
+                        <img 
+                          src={URL.createObjectURL(lyric.albumArtUrl)} 
+                          alt='Album Art'
+                          style={{ width: '100px', height: '100px '}}
+                        />
+                      </div>
+                      )}
                   </div>
               </ListGroup.Item>
             ))}

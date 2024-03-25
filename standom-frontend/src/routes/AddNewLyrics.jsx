@@ -3,9 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Form, Card } from 'react-bootstrap'
 import { useCollection } from '@squidcloud/react';
 import NavigationBar from '../components/NavigationBar';
-import { IndexData } from '../utilities/Algolia/IndexData';
 import { v4 as uuidv4 } from 'uuid';
-import Search from '../utilities/Algolia/Search';
 
 export default function AddNewLyrics({ userInfo }) {
     const userId = userInfo.id;
@@ -84,26 +82,26 @@ export default function AddNewLyrics({ userInfo }) {
 
     function handleCheckboxChange(e) {
         const { value, checked } = e.target;
+        console.log('checked value: ', checked);
         if (checked) {
             // Add the selected tag to the state
             setSelectedLyricTags(prevSelectedTags => [...prevSelectedTags, value])
         } else {
             // Remove deselected tag from the state
-            setSelectedLyricTags(prevSelectedTags => [prevSelectedTags.filter(tag => tag !== value)])
+            setSelectedLyricTags(prevSelectedTags => prevSelectedTags.filter(tag => tag !== value))
         }
         console.log('selected tags: ', selectedLyricTags);
         console.log('value: ', value);
-        console.log('checked value: ', selectedLyricTags.includes(value))
     }
 
 
     async function handleSubmit(e) {
         e.preventDefault()
-        console.log('running handleSubmit');
-
         const insertNewFavorite = async () => {
             // generate unique id for favorite
             const favoriteId = uuidv4();
+
+            // insert favorite into DB
             await userFavoritesCollection.doc({ favorite_id: favoriteId }).insert({
                 favorite_id: favoriteId,
                 user_id: userId,
@@ -112,16 +110,23 @@ export default function AddNewLyrics({ userInfo }) {
             .then(() => console.log('Inserted new user favorite'))
             .catch((error) => console.error('Error inserting new user favorite: ', error));
 
-            // put tags into dictionary
+            // insert each lyric tag into DB
+            for (const tag of selectedLyricTags) {
+                const userLyricTagId = uuidv4();
 
+                console.log('userLyricTagId: ', userLyricTagId);
+                console.log('tag_id: ', parseInt(tag));
+                console.log('favorite_id: ', favoriteId);
 
-            // insert tags into db
-            // const userLyricTagId = uuidv4();
-            // await userTagsCollection.doc({ user_lyric_tag_id: userLyricTagId }).insert({
-            //     user_lyric_tag_id: tagId,
-            //     user_id: userId,
-            //     tag_id: 
-            // })
+                await userTagsCollection.doc({ user_lyric_tag_id: userLyricTagId })
+                    .insert({
+                        user_lyric_tag_id: userLyricTagId,
+                        tag_id: parseInt(tag),
+                        favorite_id: favoriteId,
+                    })
+                    .then(() => console.log("Inserted tag"))
+                    .catch((error) => console.error("Error inserting new tags into DB: ", error));
+            }
         }
 
         insertNewFavorite();
@@ -168,6 +173,8 @@ export default function AddNewLyrics({ userInfo }) {
 //     </Row>
 // </Form>
 
+//                                checked={selectedLyricTags.includes(tag.tagId)}
+
 
     // TO DO: ADD ALBUM ART TO TOP OF CARD
     // TO DO: WHY YOU LOVE IT TAGS
@@ -191,7 +198,6 @@ export default function AddNewLyrics({ userInfo }) {
                                 value={tag.tagId}
                                 type='checkbox'
                                 id={`inline-checkbox-${index}`}
-                                checked={selectedLyricTags.includes(tag.tagId)}
                                 onChange={handleCheckboxChange}
                             />
                         ))}

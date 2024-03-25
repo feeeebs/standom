@@ -31,7 +31,7 @@ export default function Search() {
         insights={true}
       >
         <Configure userToken={userId} clickAnalytics />
-          <SearchBox />
+          <SearchBox autoFocus={true}/>
             <EmptyQueryBoundary fallback={null}>
               <NoResultsBoundary fallback={<NoResults />}>
                 <Hits hitComponent={Hit} transformItems={(items) => AddLineBreaks(items)}/>
