@@ -1,9 +1,10 @@
 import { useCollection } from '@squidcloud/react';
 import React, { useState, useEffect } from 'react'
-import { Card, ListGroup } from 'react-bootstrap';
+import { Button, Card, ListGroup } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { addNewFavoriteLyrics, updateLyricsFetched } from '../utilities/Redux/lyricsSlice';
 import Search from '../utilities/Algolia/Search';
+import { useNavigate } from 'react-router-dom';
 
 export default function MyFavoriteLyrics() {
 
@@ -17,6 +18,8 @@ export default function MyFavoriteLyrics() {
     const favoritesCollection = useCollection('users_favorite_lyrics', 'postgres_id');
     const songsCollection = useCollection('songs', 'postgres_id');
     const albumsCollection = useCollection('albums', 'postgres_id');
+
+    const navigate = useNavigate();
 
     useEffect(() => {
       console.log('lyric info: ', lyricInfo);
@@ -99,19 +102,24 @@ export default function MyFavoriteLyrics() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const favoriteLyrics = useSelector(state => state.lyrics.favoriteLyrics);
 
+  const handleClick = () => {
+      console.log('running handleLyricClick');
+      navigate('/lyric-search');
+    }
+
 
   // TO DO: ALLOW USER TO DELETE FAVORITES
   // TO DO: FILTER OUT FAVORITES THAT HAVE ALREADY BEEN ADDED OR MAKE SURE IT DOESN'T ADD DUPE ENTRIES
   // TO DO: DISPLAY ALBUM ART ON SONG CARD
   // TO DO: MAKE IT PRETTIER
   // TO DO: INCLUDE "WHY YOU LOVE IT" TAGS - use badges to display?
+  // TO DO: ADD FILTERS AND SORTING BY ALBUM/SONG
   
   return (
     <Card>
       <Card.Body>
         <h2 className='text-center mb-4'>My Favorite Lyrics</h2>
-          <h5>Add New Lyrics</h5>
-          <Search />
+          <Button onClick={handleClick}>Add New Lyrics</Button>
           <ListGroup>
             {lyricInfo.map((lyric, index) => (
               <ListGroup.Item 

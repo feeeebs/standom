@@ -5,6 +5,7 @@ import { useCollection } from '@squidcloud/react';
 import NavigationBar from '../components/NavigationBar';
 import { IndexData } from '../utilities/Algolia/IndexData';
 import { v4 as uuidv4 } from 'uuid';
+import Search from '../utilities/Algolia/Search';
 
 export default function AddNewLyrics({ userInfo }) {
     const userId = userInfo.id;
@@ -17,12 +18,14 @@ export default function AddNewLyrics({ userInfo }) {
     const lyricCollection = useCollection('song_lyrics', 'postgres_id');
     const userFavoritesCollection = useCollection('users_favorite_lyrics', 'postgres_id');
     const lyricTagsCollection = useCollection('lyric_tags', 'postgres_id');
+    const userTagsCollection = useCollection('user_lyric_tags', 'postgres_id');
 
     // Store lyric, song, album
     const [lyric, setLyric] = useState('');
     const [song, setSong] = useState('');
     const [album, setAlbum] = useState('');
     const [lyricTags, setLyricTags] = useState([]);
+    const [selectedLyricTags, setSelectedLyricTags] = useState([]);
 
     useEffect(() => {
         const getData = async () => {
@@ -61,9 +64,16 @@ export default function AddNewLyrics({ userInfo }) {
                     .query()
                     .dereference()
                     .snapshot();
-                // console.log('lyric tags: ', lyricTagsSnapshot);
-                const tags = lyricTagsSnapshot.map(tagRow => tagRow.tag);
-                setLyricTags(tags);
+                //console.log('lyric tags: ', lyricTagsSnapshot);
+                
+                const getTags = [];
+                lyricTagsSnapshot.forEach(tagRow => {
+                    const { tag_id, tag } = tagRow;
+                    const tagObject = {tagId: tag_id, tag: tag};
+                    getTags.push(tagObject);
+                });
+
+                setLyricTags(getTags);
 
             } catch (error) {
                 console.error('Error fetching data: ', error);
@@ -71,6 +81,20 @@ export default function AddNewLyrics({ userInfo }) {
         }
         getData();
     }, []);
+
+    function handleCheckboxChange(e) {
+        const { value, checked } = e.target;
+        if (checked) {
+            // Add the selected tag to the state
+            setSelectedLyricTags(prevSelectedTags => [...prevSelectedTags, value])
+        } else {
+            // Remove deselected tag from the state
+            setSelectedLyricTags(prevSelectedTags => [prevSelectedTags.filter(tag => tag !== value)])
+        }
+        console.log('selected tags: ', selectedLyricTags);
+        console.log('value: ', value);
+        console.log('checked value: ', selectedLyricTags.includes(value))
+    }
 
 
     async function handleSubmit(e) {
@@ -87,11 +111,21 @@ export default function AddNewLyrics({ userInfo }) {
             })
             .then(() => console.log('Inserted new user favorite'))
             .catch((error) => console.error('Error inserting new user favorite: ', error));
+
+            // put tags into dictionary
+
+
+            // insert tags into db
+            // const userLyricTagId = uuidv4();
+            // await userTagsCollection.doc({ user_lyric_tag_id: userLyricTagId }).insert({
+            //     user_lyric_tag_id: tagId,
+            //     user_id: userId,
+            //     tag_id: 
+            // })
         }
 
         insertNewFavorite();
         navigate("/dashboard")
-  
     }    
 
 
@@ -139,7 +173,6 @@ export default function AddNewLyrics({ userInfo }) {
     // TO DO: WHY YOU LOVE IT TAGS
   return (
     <>
-        <IndexData />
         <NavigationBar />
         <Card>
             <Card.Header>New Lyric</Card.Header>
@@ -154,10 +187,12 @@ export default function AddNewLyrics({ userInfo }) {
                             <Form.Check
                                 key={index}
                                 inline
-                                label={tag}
-                                name={tag}
+                                label={tag.tag}
+                                value={tag.tagId}
                                 type='checkbox'
                                 id={`inline-checkbox-${index}`}
+                                checked={selectedLyricTags.includes(tag.tagId)}
+                                onChange={handleCheckboxChange}
                             />
                         ))}
                     <div>

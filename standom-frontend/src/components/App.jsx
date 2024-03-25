@@ -12,6 +12,7 @@ import AddNewLyrics from '../routes/AddNewLyrics';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateAll, updateEmail, updateFirstName, updateLastName } from '../utilities/Redux/userSlice';
 import LoadingPage from '../routes/LoadingPage';
+import NewLyricSearch from '../routes/NewLyricSearch';
 
 function App() {
 
@@ -180,6 +181,10 @@ const insertNewUser = async () => {
     {
       path: "/add-lyrics/:lyricId",
       element: <PrivateRoute><AddNewLyrics userInfo={userInformation} /></PrivateRoute>,
+    },
+    {
+      path: "/lyric-search",
+      element: <PrivateRoute><NewLyricSearch userInfo={userInformation} /></PrivateRoute>,
     },
 
   ]);

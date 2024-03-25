@@ -21,7 +21,7 @@ export const Hit = ({ hit }) => {
         <Button onClick={handleLyricClick}
           //onClick={() => sendEvent('click', hit, 'Song Added to Favorites')}
           //onClick={AddNewFavoriteLyricsToDb(hit.lyric.lyric_id)}
-          >Add to Favorites</Button>
+          >Choose Lyric</Button>
     </div>
   );
 };
