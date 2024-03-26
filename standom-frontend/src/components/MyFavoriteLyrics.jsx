@@ -55,7 +55,7 @@ export default function MyFavoriteLyrics() {
                 .eq('user_id', userId)
                 .dereference()
                 .snapshot();
-                console.log('favoritesSnapshot: ', favoritesSnapshot);
+                //console.log('favoritesSnapshot: ', favoritesSnapshot);
 
                 // array to stage lyric data before updating state
                 const newLyricBucket = [];
@@ -63,7 +63,7 @@ export default function MyFavoriteLyrics() {
                 favoritesSnapshot.forEach(favoritesRow => {
                   const { lyric_id, favorite_id } = favoritesRow;
                   //console.log('favorites data: ', favoritesRow);
-                  console.log('favorite_id: ', favorite_id);
+                  //console.log('favorite_id: ', favorite_id);
 
                   // look up lyric data based on user's specific list of favorites
                   const getLyrics = async () => {
@@ -101,7 +101,7 @@ export default function MyFavoriteLyrics() {
                       .eq('song_id', song_id)
                       .dereference()
                       .snapshot();
-                    const { song_title , album_id } = songSnapshot[0];
+                    const { song_title, album_id } = songSnapshot[0];
                     // console.log('song: ', song_title);
 
                     // ALBUM ART
@@ -125,6 +125,7 @@ export default function MyFavoriteLyrics() {
                       lyric: lyric,
                       albumArtUrl: albumArtUrl,
                       tags: tagsBucket,
+                      favoriteId: favorite_id,
                     }
                     // add lyric to favorites array
                     dispatch(addNewFavoriteLyrics([lyric]));
@@ -155,6 +156,24 @@ export default function MyFavoriteLyrics() {
       navigate('/lyric-search');
     }
 
+  const handleDelete = (favoriteId) => {
+
+    console.log('favorite id being deleted: ', favoriteId);
+      const deleteUserFavorite = async () => {
+        // delete favorite from Db
+        await favoritesCollection.doc({ favorite_id: favoriteId }).delete()
+        .then(() => console.log('Deleted user favorite'))
+        .catch((error) => console.error('Error deleting user favorite: ', error));
+
+        // TO DO: also gotta delete tags but code below doesn't work
+            // is the issue that there are multiple docs with the same favorite_id?
+        // await userTagsCollection.doc({ favorite_id: favoriteId }).delete()
+        //   .then(() => console.log('Deleted user favorite tags'))
+        //   .catch((error) => console.error('Error deleting user favorite tags: ', error));
+      }
+      deleteUserFavorite();
+}
+
 
   // TO DO: ALLOW USER TO DELETE FAVORITES
   // TO DO: FILTER OUT FAVORITES THAT HAVE ALREADY BEEN ADDED OR MAKE SURE IT DOESN'T ADD DUPE ENTRIES
@@ -170,10 +189,11 @@ export default function MyFavoriteLyrics() {
             {lyricInfo.map((lyric, index) => (
               <ListGroup.Item 
                 key={index}
-                className='d-flex justify-content-between align-items-start rounded-3'
+                className='d-flex rounded-3 position-relative'
                 style={{ border: '1px solid #dee2e6', marginBottom: '10px', padding: '10px' }}
               >
-                <div className='ms-2 me-auto'>
+                <div className='flex-grow-1'>
+                  <div>
                     <div className='fw-bold'>{lyric.songTitle}</div>
                     <div style={{ whiteSpace: 'pre-line' }}>{lyric.lyric}</div>
                     <div>
@@ -183,8 +203,12 @@ export default function MyFavoriteLyrics() {
                         </Badge>
                       ))}
                     </div>
+                  </div>
                 </div>
-                <div>
+                <div className='position-absolute top-0 end-0 p-2'>
+                  <Button size='sm' variant='danger' onClick={() => handleDelete(lyric.favoriteId)}>x</Button>
+                </div>
+                <div className='ms-5'>
                     {lyric.albumArtUrl && (
                     <div>
                       <img 
