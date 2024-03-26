@@ -5,7 +5,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addNewFavoriteLyrics, updateLyricsFetched } from '../utilities/Redux/lyricsSlice';
 import { useNavigate } from 'react-router-dom';
 import FetchAlbumArtFromS3 from '../utilities/FetchAlbumArt';
-import { useCol } from 'react-bootstrap/esm/Col';
 
 export default function MyFavoriteLyrics() {
 
@@ -20,7 +19,7 @@ export default function MyFavoriteLyrics() {
     const songsCollection = useCollection('songs', 'postgres_id');
     const albumsCollection = useCollection('albums', 'postgres_id');
     const userTagsCollection = useCollection('user_lyric_tags', 'postgres_id');
-    const lyricTagsCollection = useCollection('lyric_tags', 'postgres_id');
+    //const lyricTagsCollection = useCollection('lyric_tags', 'postgres_id');
 
     const navigate = useNavigate();
 
@@ -68,6 +67,7 @@ export default function MyFavoriteLyrics() {
 
                   // look up lyric data based on user's specific list of favorites
                   const getLyrics = async () => {
+                    // LYRIC
                     const lyricSnapshot = await lyricsCollection
                       .query()
                       .eq('lyric_id', lyric_id)
@@ -76,8 +76,7 @@ export default function MyFavoriteLyrics() {
                     const { lyric, song_id } = lyricSnapshot[0];
                     //console.log('lyric: ', lyric);
 
-                    //TO DO: QUERY FOR LYRIC TAGS; ADD TAGS TO LYRIC ARRAY; INCLUDE LOGIC FOR IF SNAPSHOT IS EMPTY
-                    
+                    // LYRIC TAGS
                     const userLyricTagsSnapshot = await userTagsCollection
                       .query()
                       .eq('favorite_id', favorite_id)
@@ -89,11 +88,14 @@ export default function MyFavoriteLyrics() {
                     const tagsBucket = [];
                     if (userLyricTagsSnapshot) {
                       userLyricTagsSnapshot.forEach(tag => {
+                        // once i figure out the join, change this to tag.tag to get the actual value
+                        // for now just displaying the ID to test it out
                         tagsBucket.push(tag.tag_id);
                       })
                     }
                     console.log('tagbucket: ', tagsBucket);
 
+                    // SONG
                     const songSnapshot = await songsCollection
                       .query()
                       .eq('song_id', song_id)
@@ -102,6 +104,7 @@ export default function MyFavoriteLyrics() {
                     const { song_title , album_id } = songSnapshot[0];
                     // console.log('song: ', song_title);
 
+                    // ALBUM ART
                     const albumSnapshot = await albumsCollection
                       .query()
                       .eq('album_id', album_id)
@@ -114,7 +117,8 @@ export default function MyFavoriteLyrics() {
                     // get album art from S3
                     const albumArtUrl = await FetchAlbumArtFromS3(album_art_key);
 
-                    // Create object to store song title, album title, and lyric
+                    // PUT IT ALL TOGETHER
+                    // Create object to store song title, album title, lyric, and tags
                     const lyricObject = {
                       songTitle: song_title,
                       albumTitle: album_title,
@@ -154,7 +158,6 @@ export default function MyFavoriteLyrics() {
 
   // TO DO: ALLOW USER TO DELETE FAVORITES
   // TO DO: FILTER OUT FAVORITES THAT HAVE ALREADY BEEN ADDED OR MAKE SURE IT DOESN'T ADD DUPE ENTRIES
-  // TO DO: MAKE IT PRETTIER
   // TO DO: INCLUDE "WHY YOU LOVE IT" TAGS - use badges to display?
   // TO DO: ADD FILTERS AND SORTING BY ALBUM/SONG
   
