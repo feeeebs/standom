@@ -121,8 +121,8 @@ export default function AddNewLyrics({ userInfo }) {
                 await userTagsCollection.doc({ user_lyric_tag_id: userLyricTagId })
                     .insert({
                         user_lyric_tag_id: userLyricTagId,
-                        tag_id: parseInt(tag),
                         favorite_id: favoriteId,
+                        tag_id: parseInt(tag),
                     })
                     .then(() => console.log("Inserted tag"))
                     .catch((error) => console.error("Error inserting new tags into DB: ", error));
