@@ -18,6 +18,7 @@ export default function MyFavoriteLyrics() {
     const favoritesCollection = useCollection('users_favorite_lyrics', 'postgres_id');
     const songsCollection = useCollection('songs', 'postgres_id');
     const albumsCollection = useCollection('albums', 'postgres_id');
+    // const userTagsCollection = useCollection('user_lyric_tags', 'postgres_id');
 
     const navigate = useNavigate();
 
@@ -43,18 +44,26 @@ export default function MyFavoriteLyrics() {
                 const newLyricBucket = [];
 
                 favoritesSnapshot.forEach(favoritesRow => {
-                  const lyricId = favoritesRow.lyric_id;
-                  //console.log('favorites data: ', favoritesRow.data);
+                  const { lyric_id } = favoritesRow;
+                  console.log('favorites data: ', favoritesRow);
 
                   // look up lyric data based on user's specific list of favorites
                   const getLyrics = async () => {
                     const lyricSnapshot = await lyricsCollection
                       .query()
-                      .eq('lyric_id', lyricId)
+                      .eq('lyric_id', lyric_id)
                       .dereference()
                       .snapshot();
                     const { lyric, song_id } = lyricSnapshot[0];
-                    // console.log('lyric: ', lyric);
+                    console.log('lyric: ', lyric);
+
+                    //TO DO: QUERY FOR LYRIC TAGS; ADD TAGS TO LYRIC ARRAY; INCLUDE LOGIC FOR IF SNAPSHOT IS EMPTY
+                    // const userLyricTagsSnapshot = await userTagsCollection
+                    //   .query()
+                    //   .eq('favorite_id', favorite_id)
+                    //   .dereference()
+                    //   .snapshot();
+                    // console.log('userLyricTagSnap: ', userLyricTagsSnapshot);
 
                     const songSnapshot = await songsCollection
                       .query()
@@ -115,7 +124,6 @@ export default function MyFavoriteLyrics() {
 
   // TO DO: ALLOW USER TO DELETE FAVORITES
   // TO DO: FILTER OUT FAVORITES THAT HAVE ALREADY BEEN ADDED OR MAKE SURE IT DOESN'T ADD DUPE ENTRIES
-  // TO DO: DISPLAY ALBUM ART ON SONG CARD
   // TO DO: MAKE IT PRETTIER
   // TO DO: INCLUDE "WHY YOU LOVE IT" TAGS - use badges to display?
   // TO DO: ADD FILTERS AND SORTING BY ALBUM/SONG
@@ -124,28 +132,29 @@ export default function MyFavoriteLyrics() {
     <Card>
       <Card.Body>
         <h2 className='text-center mb-4'>My Favorite Lyrics</h2>
-          <Button onClick={handleClick}>Add New Lyrics</Button>
+          <Button className='mb-2' onClick={handleClick}>Add New Lyrics</Button>
           <ListGroup>
             {lyricInfo.map((lyric, index) => (
               <ListGroup.Item 
                 key={index}
-                className='d-flex justify-content-between align-items-start'
+                className='d-flex justify-content-between align-items-start rounded-3'
+                style={{ border: '1px solid #dee2e6', marginBottom: '10px', padding: '10px' }}
               >
                 <div className='ms-2 me-auto'>
                     <div className='fw-bold'>{lyric.songTitle}</div>
                     <div style={{ whiteSpace: 'pre-line' }}>{lyric.lyric}</div>
-                  </div>
-                  <div>
-                      {lyric.albumArtUrl && (
-                      <div>
-                        <img 
-                          src={URL.createObjectURL(lyric.albumArtUrl)} 
-                          alt='Album Art'
-                          style={{ width: '100px', height: '100px '}}
-                        />
-                      </div>
-                      )}
-                  </div>
+                </div>
+                <div>
+                    {lyric.albumArtUrl && (
+                    <div>
+                      <img 
+                        src={URL.createObjectURL(lyric.albumArtUrl)} 
+                        alt='Album Art'
+                        style={{ width: '100px', height: '100px '}}
+                      />
+                    </div>
+                    )}
+                </div>
               </ListGroup.Item>
             ))}
           </ListGroup>
