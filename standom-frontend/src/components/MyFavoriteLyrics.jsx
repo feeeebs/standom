@@ -181,7 +181,7 @@ export default function MyFavoriteLyrics() {
         <h2 className='text-center mb-4'>My Favorite Lyrics</h2>
           <Button className='mb-2' onClick={handleClick}>Add New Lyrics</Button>
           {loading ? (
-            <div>Loading...</div>
+            <div className='text-center mb-3'>In search of glorious happenings of happenstance in someone else's playground...</div>
           ) : (
           <ListGroup>
             {lyricInfo.length > 0 ? (
@@ -221,7 +221,10 @@ export default function MyFavoriteLyrics() {
               </ListGroup.Item>
             ))
             ) : (
+              <>
               <div>You haven't saved any favorites yet.</div>
+              <div>Try searching "aurora borealis green"</div>
+              </>
             )}
           </ListGroup>
           )}
