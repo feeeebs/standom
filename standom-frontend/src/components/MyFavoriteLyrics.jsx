@@ -17,7 +17,7 @@ export default function MyFavoriteLyrics() {
     const songsCollection = useCollection('songs', 'postgres_id');
     const albumsCollection = useCollection('albums', 'postgres_id');
     const userTagsCollection = useCollection('user_lyric_tags', 'postgres_id');
-    //const lyricTagsCollection = useCollection('lyric_tags', 'postgres_id');
+    const lyricTagsCollection = useCollection('lyric_tags', 'postgres_id');
 
     const navigate = useNavigate();
 
@@ -74,16 +74,25 @@ export default function MyFavoriteLyrics() {
                         .eq('favorite_id', favorite_id)
                         .dereference()
                         .snapshot();
-      
-                      //console.log('userLyricTagSnap: ', userLyricTagsSnapshot);
+                      console.log('userLyricTagSnap: ', userLyricTagsSnapshot);
       
                       const tagsBucket = [];
                       if (userLyricTagsSnapshot) {
-                        userLyricTagsSnapshot.forEach(tag => {
-                          // once i figure out the join, change this to tag.tag to get the actual value
-                          // for now just displaying the ID to test it out
-                          tagsBucket.push(tag.tag_id);
-                        })
+                        for (const tagRow of userLyricTagsSnapshot) {
+                          console.log('searching for tag id: ', tagRow.tag_id);
+                          const tagSnap = await lyricTagsCollection
+                          .query()
+                          .eq('tag_id', tagRow.tag_id)
+                          .dereference()
+                          .snapshot();
+                        console.log('tag snapshot: ', tagSnap);
+                        const { tag_id, tag } = tagSnap[0];
+                        console.log('tag: ', tag);
+                        const tagObject = { tagId: tag_id, tag: tag };
+                        
+                        tagsBucket.push(tagObject);
+                        }
+                        
                       }
                       //console.log('tagbucket: ', tagsBucket);
       
@@ -186,7 +195,7 @@ export default function MyFavoriteLyrics() {
                     <div>
                       {lyric.tags.map((tag, tagIndex) => (
                         <Badge key={tagIndex} className='me-1'>
-                          {tag}
+                          {tag.tag}
                         </Badge>
                       ))}
                     </div>
