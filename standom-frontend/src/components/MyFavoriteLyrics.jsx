@@ -1,18 +1,16 @@
 import { useCollection } from '@squidcloud/react';
 import React, { useState, useEffect } from 'react'
 import { Badge, Button, Card, ListGroup } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import { addNewFavoriteLyrics, updateLyricsFetched } from '../utilities/Redux/lyricsSlice';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import FetchAlbumArtFromS3 from '../utilities/FetchAlbumArt';
 
 export default function MyFavoriteLyrics() {
 
     const [lyricInfo, setLyricInfo] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const dispatch = useDispatch();
     const userId = useSelector(state => state.user.userInfo.id);
-    const lyricsFetched = useSelector(state => state.lyrics.fetched);
 
     const lyricsCollection = useCollection('song_lyrics', 'postgres_id');
     const favoritesCollection = useCollection('users_favorite_lyrics', 'postgres_id');
@@ -23,141 +21,139 @@ export default function MyFavoriteLyrics() {
 
     const navigate = useNavigate();
 
+    // log lyricInfo when it changes
     useEffect(() => {
       console.log('lyric info: ', lyricInfo);
+      console.log('lyric info length: ', lyricInfo.length);
 
-    }, [lyricInfo])
+    }, [lyricInfo]);
 
-
-    // const favoritesSnapshot = favoritesCollection
-    //   .query()
-    //   .eq('user_id', userId)
-    //   .dereference()
-    //   .snapshots();
-    //             // console.log('favoritesSnapshot: ', favoritesSnapshot);
-    
-    // favoritesSnapshot.subscribe((users_favorite_lyrics) => {
-    //   console.log(
-    //     'Got new snapshot:',
-    //     users_favorite_lyrics.map((favorite) => favorite.data)
-    //   );
-    // });
-
-
-    // queries to fetch lyric, song, and album data for user's favorites
+    // log loading state when it changes
     useEffect(() => {
-      if (!lyricsFetched) {
-          const getFavorites = async () => {
-            try {
-              // get list of favorites
-              const favoritesSnapshot = await favoritesCollection
-                .query()
-                .eq('user_id', userId)
-                .dereference()
-                .snapshot();
-                //console.log('favoritesSnapshot: ', favoritesSnapshot);
+      console.log('loading state: ', loading);
+    }, [loading]);
 
-                // array to stage lyric data before updating state
-                const newLyricBucket = [];
+    
+    // subscribe to changes in favoritesCollection
+    // get fresh favorites from DB when changes are detected
+    useEffect(() => {
+      const favoritesSubscription = favoritesCollection
+        .query()
+        .eq('user_id', userId)
+        .dereference()
+        .snapshots()
+        .subscribe({
+          next: (favoritesSnapshot) => {
+            console.log('Got new snapshot: ', favoritesSnapshot);
+            //console.log('lyric info: ', lyricInfo);
 
-                favoritesSnapshot.forEach(favoritesRow => {
-                  const { lyric_id, favorite_id } = favoritesRow;
-                  //console.log('favorites data: ', favoritesRow);
-                  //console.log('favorite_id: ', favorite_id);
-
-                  // look up lyric data based on user's specific list of favorites
-                  const getLyrics = async () => {
-                    // LYRIC
-                    const lyricSnapshot = await lyricsCollection
-                      .query()
-                      .eq('lyric_id', lyric_id)
-                      .dereference()
-                      .snapshot();
-                    const { lyric, song_id } = lyricSnapshot[0];
-                    //console.log('lyric: ', lyric);
-
-                    // LYRIC TAGS
-                    const userLyricTagsSnapshot = await userTagsCollection
-                      .query()
-                      .eq('favorite_id', favorite_id)
-                      .dereference()
-                      .snapshot();
-
-                    console.log('userLyricTagSnap: ', userLyricTagsSnapshot);
-
-                    const tagsBucket = [];
-                    if (userLyricTagsSnapshot) {
-                      userLyricTagsSnapshot.forEach(tag => {
-                        // once i figure out the join, change this to tag.tag to get the actual value
-                        // for now just displaying the ID to test it out
-                        tagsBucket.push(tag.tag_id);
-                      })
-                    }
-                    console.log('tagbucket: ', tagsBucket);
-
-                    // SONG
-                    const songSnapshot = await songsCollection
-                      .query()
-                      .eq('song_id', song_id)
-                      .dereference()
-                      .snapshot();
-                    const { song_title, album_id } = songSnapshot[0];
-                    // console.log('song: ', song_title);
-
-                    // ALBUM ART
-                    const albumSnapshot = await albumsCollection
-                      .query()
-                      .eq('album_id', album_id)
-                      .dereference()
-                      .snapshot();
-                    const { album_title, album_art_key } = albumSnapshot[0];
-                    //console.log('album: ', album_title);
-                    //console.log('album art key: ', album_art_key);
-
-                    // get album art from S3
-                    const albumArtUrl = await FetchAlbumArtFromS3(album_art_key);
-
-                    // PUT IT ALL TOGETHER
-                    // Create object to store song title, album title, lyric, and tags
-                    const lyricObject = {
-                      songTitle: song_title,
-                      albumTitle: album_title,
-                      lyric: lyric,
-                      albumArtUrl: albumArtUrl,
-                      tags: tagsBucket,
-                      favoriteId: favorite_id,
-                    }
-                    // add lyric to favorites array
-                    dispatch(addNewFavoriteLyrics([lyric]));
-                    newLyricBucket.push(lyricObject)
-                  }
-                  getLyrics();
-
-                })
-                // update state with new lyric entry
-                setLyricInfo(newLyricBucket);
-                dispatch(updateLyricsFetched());
-            } catch (error) {
-              console.error('Error fetching favorite lyrics: ', error);
-            }
-          };
+            const fetchFavorites = async () => {
+              try {
+                  setLoading(true);
+                  // array to stage lyric data before updating state
+                  const newLyricBucket = [];
       
-      getFavorites();
+                  const promises = favoritesSnapshot.map(async (favoritesRow) => {
+                    const { lyric_id, favorite_id } = favoritesRow;
+                    //console.log('favorites data: ', favoritesRow);
+                    //console.log('favorite_id: ', favorite_id);
+      
+                    // look up lyric data based on user's specific list of favorites
+                      // LYRIC
+                      const lyricSnapshot = await lyricsCollection
+                        .query()
+                        .eq('lyric_id', lyric_id)
+                        .dereference()
+                        .snapshot();
+                      const { lyric, song_id } = lyricSnapshot[0];
+                      //console.log('lyric: ', lyric);
+      
+                      // LYRIC TAGS
+                      const userLyricTagsSnapshot = await userTagsCollection
+                        .query()
+                        .eq('favorite_id', favorite_id)
+                        .dereference()
+                        .snapshot();
+      
+                      //console.log('userLyricTagSnap: ', userLyricTagsSnapshot);
+      
+                      const tagsBucket = [];
+                      if (userLyricTagsSnapshot) {
+                        userLyricTagsSnapshot.forEach(tag => {
+                          // once i figure out the join, change this to tag.tag to get the actual value
+                          // for now just displaying the ID to test it out
+                          tagsBucket.push(tag.tag_id);
+                        })
+                      }
+                      //console.log('tagbucket: ', tagsBucket);
+      
+                      // SONG
+                      const songSnapshot = await songsCollection
+                        .query()
+                        .eq('song_id', song_id)
+                        .dereference()
+                        .snapshot();
+                      const { song_title, album_id } = songSnapshot[0];
+                      // console.log('song: ', song_title);
+      
+                      // ALBUM ART
+                      const albumSnapshot = await albumsCollection
+                        .query()
+                        .eq('album_id', album_id)
+                        .dereference()
+                        .snapshot();
+                      const { album_title, album_art_key } = albumSnapshot[0];
+                      //console.log('album: ', album_title);
+                      //console.log('album art key: ', album_art_key);
+      
+                      // get album art from S3
+                      const albumArtUrl = await FetchAlbumArtFromS3(album_art_key);
+      
+                      // PUT IT ALL TOGETHER
+                      // Create object to store song title, album title, lyric, and tags
+                      const lyricObject = {
+                        songTitle: song_title,
+                        albumTitle: album_title,
+                        lyric: lyric,
+                        albumArtUrl: albumArtUrl,
+                        tags: tagsBucket,
+                        favoriteId: favorite_id,
+                      }
+                      // add lyric to favorites array
+                      newLyricBucket.push(lyricObject);
+                    });
 
-      }
-    }, [lyricsFetched, favoritesCollection, lyricsCollection, userId, lyricInfo]);
+                    await Promise.all(promises);
+ 
+                  // update state with new lyric entry
+                  setLyricInfo(newLyricBucket);
+                  setLoading(false);
+              } catch (error) {
+                console.error('Error fetching favorite lyrics: ', error);
+                setLoading(false);
+              }
+          };
+  
+          fetchFavorites();
 
-    // WHY DOES REMOVING THIS UNUSED VARIABLE / USESELECTOR CALL BREAK THINGS???
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const favoriteLyrics = useSelector(state => state.lyrics.favoriteLyrics);
+          },
+          error: (error) => {
+            console.error('Error fetching favorites: ', error);
+          }
+        });
 
+      return () => {
+        favoritesSubscription.unsubscribe();
+      };
+    }, [favoritesCollection, userId, userTagsCollection]);
+
+  
   const handleClick = () => {
       console.log('running handleLyricClick');
       navigate('/lyric-search');
-    }
+  }
 
   const handleDelete = (favoriteId) => {
-
     console.log('favorite id being deleted: ', favoriteId);
       const deleteUserFavorite = async () => {
         // delete favorite from Db
@@ -172,10 +168,9 @@ export default function MyFavoriteLyrics() {
         //   .catch((error) => console.error('Error deleting user favorite tags: ', error));
       }
       deleteUserFavorite();
-}
+  }
+  
 
-
-  // TO DO: ALLOW USER TO DELETE FAVORITES
   // TO DO: FILTER OUT FAVORITES THAT HAVE ALREADY BEEN ADDED OR MAKE SURE IT DOESN'T ADD DUPE ENTRIES
   // TO DO: INCLUDE "WHY YOU LOVE IT" TAGS - use badges to display?
   // TO DO: ADD FILTERS AND SORTING BY ALBUM/SONG
@@ -185,8 +180,12 @@ export default function MyFavoriteLyrics() {
       <Card.Body>
         <h2 className='text-center mb-4'>My Favorite Lyrics</h2>
           <Button className='mb-2' onClick={handleClick}>Add New Lyrics</Button>
+          {loading ? (
+            <div className='text-center mb-3'>In search of glorious happenings of happenstance in someone else's playground...</div>
+          ) : (
           <ListGroup>
-            {lyricInfo.map((lyric, index) => (
+            {lyricInfo.length > 0 ? (
+            lyricInfo.map((lyric, index) => (
               <ListGroup.Item 
                 key={index}
                 className='d-flex rounded-3 position-relative'
@@ -206,7 +205,7 @@ export default function MyFavoriteLyrics() {
                   </div>
                 </div>
                 <div className='position-absolute top-0 end-0 p-2'>
-                  <Button size='sm' variant='danger' onClick={() => handleDelete(lyric.favoriteId)}>x</Button>
+                    <Button size='sm' variant='danger' onClick={() => handleDelete(lyric.favoriteId)}>x</Button>
                 </div>
                 <div className='ms-5'>
                     {lyric.albumArtUrl && (
@@ -220,8 +219,15 @@ export default function MyFavoriteLyrics() {
                     )}
                 </div>
               </ListGroup.Item>
-            ))}
+            ))
+            ) : (
+              <>
+              <div>You haven't saved any favorites yet.</div>
+              <div>Try searching "aurora borealis green"</div>
+              </>
+            )}
           </ListGroup>
+          )}
       </Card.Body>
     </Card>
   )
