@@ -153,21 +153,9 @@ export default function MyFavoriteLyrics() {
       navigate('/lyric-search');
   }
 
-  const handleDelete = (favoriteId) => {
-    console.log('favorite id being deleted: ', favoriteId);
-      const deleteUserFavorite = async () => {
-        // delete favorite from Db
-        await favoritesCollection.doc({ favorite_id: favoriteId }).delete()
-        .then(() => console.log('Deleted user favorite'))
-        .catch((error) => console.error('Error deleting user favorite: ', error));
-
-        // TO DO: also gotta delete tags but code below doesn't work
-            // is the issue that there are multiple docs with the same favorite_id?
-        // await userTagsCollection.doc({ favorite_id: favoriteId }).delete()
-        //   .then(() => console.log('Deleted user favorite tags'))
-        //   .catch((error) => console.error('Error deleting user favorite tags: ', error));
-      }
-      deleteUserFavorite();
+  
+  const handleEdit = (lyricObject) => {
+    navigate(`/edit-favorite/${lyricObject.favoriteId}`, { state: {lyricObject } });
   }
   
 
@@ -205,15 +193,15 @@ export default function MyFavoriteLyrics() {
                   </div>
                 </div>
                 <div className='position-absolute top-0 end-0 p-2'>
-                    <Button size='sm' variant='danger' onClick={() => handleDelete(lyric.favoriteId)}>x</Button>
+                    <Button size='sm' onClick={() => handleEdit(lyric)}>Edit</Button>
                 </div>
-                <div className='ms-5'>
+                <div className='ms-5 mt-4'>
                     {lyric.albumArtUrl && (
                     <div>
                       <img 
                         src={URL.createObjectURL(lyric.albumArtUrl)} 
                         alt='Album Art'
-                        style={{ width: '100px', height: '100px '}}
+                        style={{ width: '115px', height: '115px '}}
                       />
                     </div>
                     )}

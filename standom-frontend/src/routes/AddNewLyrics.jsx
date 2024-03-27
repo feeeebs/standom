@@ -182,7 +182,7 @@ export default function AddNewLyrics({ userInfo }) {
     <>
         <NavigationBar />
         <Card>
-            <Card.Header>New Lyric</Card.Header>
+            <Card.Header><h4>New Lyric</h4></Card.Header>
             <Card.Body>
                 <Card.Title>{song}</Card.Title>
                     <Card.Subtitle>{album}</Card.Subtitle>

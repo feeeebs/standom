@@ -13,6 +13,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateAll, updateEmail, updateFirstName, updateLastName } from '../utilities/Redux/userSlice';
 import LoadingPage from '../routes/LoadingPage';
 import NewLyricSearch from '../routes/NewLyricSearch';
+import EditFavoriteLyric from '../routes/EditFavoriteLyric';
 
 function App() {
 
@@ -185,6 +186,10 @@ const insertNewUser = async () => {
     {
       path: "/lyric-search",
       element: <PrivateRoute><NewLyricSearch userInfo={userInformation} /></PrivateRoute>,
+    },
+    {
+      path: "/edit-favorite/:favoriteId",
+      element: <PrivateRoute><EditFavoriteLyric userInfo={userInformation} /></PrivateRoute>,
     },
 
   ]);
