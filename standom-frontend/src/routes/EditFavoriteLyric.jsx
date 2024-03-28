@@ -62,7 +62,7 @@ export default function EditFavoriteLyric({ userInfo }) {
         fetchTags();
     }, [])
 
-
+    // track changes to checkboxes as user selects/deselects tags
     function handleCheckboxChange(e) {
         const { value, checked } = e.target;
         console.log('checked value: ', checked);
@@ -79,39 +79,29 @@ export default function EditFavoriteLyric({ userInfo }) {
         console.log('value: ', value);
     }
 
-    // TO DO: MAKE SURE PREVIOUS TAGS THAT AREN'T REMOVED STAY ASSOCIATED WITH THE FAVORITE
-    // TO DO: MAKE SURE TAGS THAT ARE REMOVED ARE DELETED FROM THE DB
+
+    // function to clear out old tags associated with the favorite - used in handleSubmit and handleDelete
+    const deleteOldTags = async () => {
+        const oldTagsSnapshot = await userTagsCollection
+            .query()
+            .eq('favorite_id', favoriteId)
+            .dereference()
+            .snapshot();
+        
+        for (const tag of oldTagsSnapshot) {
+            await userTagsCollection.doc({ user_lyric_tag_id: tag.user_lyric_tag_id }).delete()
+                .then(() => console.log('Deleted tag'))
+                .catch((error) => console.error('Error deleting tag: ', error));
+        }
+    }
     
     async function handleSubmit(e) {
+
         e.preventDefault()
-        const insertNewFavorite = async () => {
 
-            // insert favorite into DB
-            await userFavoritesCollection.doc({ favorite_id: favoriteId }).insert({
-                favorite_id: favoriteId,
-                user_id: userId,
-                lyric_id: parseInt(lyricObject.lyric.lyricId)
-            })
-            .then(() => console.log('Updated user favorite'))
-            .catch((error) => console.error('Error updating user favorite: ', error));
-
-            // delete all tags associated with the favorite
-            const deleteTags = async () => {
-                const oldTagsSnapshot = await userTagsCollection
-                    .query()
-                    .eq('favorite_id', favoriteId)
-                    .dereference()
-                    .snapshot();
-                
-                for (const tag of oldTagsSnapshot) {
-                    await userTagsCollection.doc({ user_lyric_tag_id: tag.user_lyric_tag_id }).delete()
-                        .then(() => console.log('Deleted tag'))
-                        .catch((error) => console.error('Error deleting tag: ', error));
-                }
-            }
-            deleteTags();
+        // function to add the new lyric tag list to the DB
+        const addNewTags = async () => {
             
-            // insert each lyric tag into DB
             for (const tag of selectedLyricTags) {
                 const userLyricTagId = uuidv4();
 
@@ -131,7 +121,9 @@ export default function EditFavoriteLyric({ userInfo }) {
             }
         }
 
-        insertNewFavorite();
+        // first delete all old tags; then add in the new tags
+        await deleteOldTags();
+        addNewTags();
         navigate("/dashboard")
     }    
     
@@ -152,6 +144,7 @@ export default function EditFavoriteLyric({ userInfo }) {
             //   .catch((error) => console.error('Error deleting user favorite tags: ', error));
           }
           deleteUserFavorite();
+          deleteOldTags();
           navigate('/dashboard');
       }
 
