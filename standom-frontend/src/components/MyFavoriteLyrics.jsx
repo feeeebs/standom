@@ -66,6 +66,7 @@ export default function MyFavoriteLyrics() {
                         .dereference()
                         .snapshot();
                       const { lyric, song_id } = lyricSnapshot[0];
+                      const lyricOb = { lyricId: lyric_id, lyric: lyric };
                       //console.log('lyric: ', lyric);
       
                       // LYRIC TAGS
@@ -74,20 +75,20 @@ export default function MyFavoriteLyrics() {
                         .eq('favorite_id', favorite_id)
                         .dereference()
                         .snapshot();
-                      console.log('userLyricTagSnap: ', userLyricTagsSnapshot);
+                      //console.log('userLyricTagSnap: ', userLyricTagsSnapshot);
       
                       const tagsBucket = [];
                       if (userLyricTagsSnapshot) {
                         for (const tagRow of userLyricTagsSnapshot) {
-                          console.log('searching for tag id: ', tagRow.tag_id);
+                          //console.log('searching for tag id: ', tagRow.tag_id);
                           const tagSnap = await lyricTagsCollection
                           .query()
                           .eq('tag_id', tagRow.tag_id)
                           .dereference()
                           .snapshot();
-                        console.log('tag snapshot: ', tagSnap);
+                        //console.log('tag snapshot: ', tagSnap);
                         const { tag_id, tag } = tagSnap[0];
-                        console.log('tag: ', tag);
+                        //console.log('tag: ', tag);
                         const tagObject = { tagId: tag_id, tag: tag };
                         
                         tagsBucket.push(tagObject);
@@ -123,7 +124,7 @@ export default function MyFavoriteLyrics() {
                       const lyricObject = {
                         songTitle: song_title,
                         albumTitle: album_title,
-                        lyric: lyric,
+                        lyric: lyricOb,
                         albumArtUrl: albumArtUrl,
                         tags: tagsBucket,
                         favoriteId: favorite_id,
@@ -164,7 +165,7 @@ export default function MyFavoriteLyrics() {
 
   
   const handleEdit = (lyricObject) => {
-    navigate(`/edit-favorite/${lyricObject.favoriteId}`, { state: {lyricObject } });
+    navigate(`/edit-favorite/${lyricObject.favoriteId}`, { state: { lyricObject } });
   }
   
 
@@ -191,7 +192,7 @@ export default function MyFavoriteLyrics() {
                 <div className='flex-grow-1'>
                   <div>
                     <div className='fw-bold'>{lyric.songTitle}</div>
-                    <div style={{ whiteSpace: 'pre-line' }}>{lyric.lyric}</div>
+                    <div style={{ whiteSpace: 'pre-line' }}>{lyric.lyric.lyric}</div>
                     <div>
                       {lyric.tags.map((tag, tagIndex) => (
                         <Badge key={tagIndex} className='me-1'>

@@ -1,58 +1,147 @@
 import { useCollection } from '@squidcloud/react';
 import React, { useEffect, useState } from 'react'
-import { Button, Card } from 'react-bootstrap';
-import { Form, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Button, Card, Form } from 'react-bootstrap';
+import { useLocation, useNavigate } from 'react-router-dom'
 import NavigationBar from '../components/NavigationBar';
+import { v4 as uuidv4 } from 'uuid';
 
-export default function EditFavoriteLyric() {
-    const { favoriteId } = useParams();
+export default function EditFavoriteLyric({ userInfo }) {
     const location = useLocation();
     const { lyricObject } = location.state;
+    const { favoriteId } = lyricObject;
+    const userId = userInfo.id;
     const navigate = useNavigate();
 
-    const favoritesCollection = useCollection('users_favorite_lyrics', 'postgres_id');
+    const userFavoritesCollection = useCollection('users_favorite_lyrics', 'postgres_id');
     const lyricTagsCollection = useCollection('lyric_tags', 'postgres_id');
+    const userTagsCollection = useCollection('user_lyric_tags', 'postgres_id');
 
     const [lyricTags, setLyricTags] = useState([]);
+    const [selectedLyricTags, setSelectedLyricTags] = useState([])
     const [loading, setLoading] = useState(true);
 
+    // set selected tags to the tags that are already associated with the favorite
+    useEffect(() => {
+        setSelectedLyricTags(lyricObject.tags.map(tag => ({ tagId: tag.tagId, tag: tag.tag })));
+    }, []);
+    
     useEffect(() => {
         console.log('lyric tags: ', lyricTags);
-    }, [lyricTags]);
+        console.log('selected tags: ', selectedLyricTags);
+        console.log('lyric object tags: ', lyricObject.tags);
+        console.log('lyric object tag bool: ', lyricObject.tags.includes(lyricObject.tags[0]))
+    }, [lyricTags, selectedLyricTags]);
 
     useEffect(() => {
         console.log('loading state: ', loading);
     }, [loading]);
 
     useEffect(() => {
-        const getTags = async () => {
+        const fetchTags = async () => {
             // fetch lyric tags
             const lyricTagsSnapshot = await lyricTagsCollection
             .query()
             .dereference()
             .snapshot();
-            console.log('lyric tags: ', lyricTagsSnapshot);
+            console.log('lyric snap: ', lyricTagsSnapshot);
                 
             const getTags = [];
-            lyricTagsSnapshot.forEach(tagRow => {
+            for (const tagRow of lyricTagsSnapshot) {
                 const { tag_id, tag } = tagRow;
                 const tagObject = {tagId: tag_id, tag: tag};
                 getTags.push(tagObject);
-            });
-
+            }
+            
             setLyricTags(getTags);
-            setLoading(false);
+            if (lyricObject) {
+                setLoading(false);
+            }
+
         }
 
-        getTags();
+        fetchTags();
     }, [])
+
+
+    function handleCheckboxChange(e) {
+        const { value, checked } = e.target;
+        console.log('checked value: ', checked);
+        if (checked) {
+            const tagObject = lyricTags.find(tag => tag.tagId === parseInt(value));
+            // Add the selected tag to the state
+            setSelectedLyricTags(prevSelectedTags => [...prevSelectedTags, tagObject])
+        } else {
+            console.log('removing tag');
+            // Remove deselected tag from the state
+            setSelectedLyricTags(prevSelectedTags => prevSelectedTags.filter(tag => tag.tagId !== parseInt(value)))
+        }
+        console.log('selected tags: ', selectedLyricTags);
+        console.log('value: ', value);
+    }
+
+    // TO DO: MAKE SURE PREVIOUS TAGS THAT AREN'T REMOVED STAY ASSOCIATED WITH THE FAVORITE
+    // TO DO: MAKE SURE TAGS THAT ARE REMOVED ARE DELETED FROM THE DB
+    
+    async function handleSubmit(e) {
+        e.preventDefault()
+        const insertNewFavorite = async () => {
+
+            // insert favorite into DB
+            await userFavoritesCollection.doc({ favorite_id: favoriteId }).insert({
+                favorite_id: favoriteId,
+                user_id: userId,
+                lyric_id: parseInt(lyricObject.lyric.lyricId)
+            })
+            .then(() => console.log('Updated user favorite'))
+            .catch((error) => console.error('Error updating user favorite: ', error));
+
+            // delete all tags associated with the favorite
+            const deleteTags = async () => {
+                const oldTagsSnapshot = await userTagsCollection
+                    .query()
+                    .eq('favorite_id', favoriteId)
+                    .dereference()
+                    .snapshot();
+                
+                for (const tag of oldTagsSnapshot) {
+                    await userTagsCollection.doc({ user_lyric_tag_id: tag.user_lyric_tag_id }).delete()
+                        .then(() => console.log('Deleted tag'))
+                        .catch((error) => console.error('Error deleting tag: ', error));
+                }
+            }
+            deleteTags();
+            
+            // insert each lyric tag into DB
+            for (const tag of selectedLyricTags) {
+                const userLyricTagId = uuidv4();
+
+                console.log('userLyricTagId: ', userLyricTagId);
+                console.log('tag_id: ', parseInt(tag.tagId));
+                console.log('favorite_id: ', favoriteId);
+
+                // THIS IS ADDING ANY NEW CHECKS -- NEED TO ACCOUNT FOR REMOVALS
+                await userTagsCollection.doc({ user_lyric_tag_id: userLyricTagId })
+                    .insert({
+                        user_lyric_tag_id: userLyricTagId,
+                        favorite_id: favoriteId,
+                        tag_id: parseInt(tag.tagId),
+                    })
+                    .then(() => console.log("Inserted tag"))
+                    .catch((error) => console.error("Error inserting new tags into DB: ", error));
+            }
+        }
+
+        insertNewFavorite();
+        navigate("/dashboard")
+    }    
+    
 
     // handle favorite deletion
     const handleDelete = (favoriteId) => {
         console.log('favorite id being deleted: ', favoriteId);
           const deleteUserFavorite = async () => {
             // delete favorite from Db
-            await favoritesCollection.doc({ favorite_id: favoriteId }).delete()
+            await userFavoritesCollection.doc({ favorite_id: favoriteId }).delete()
             .then(() => console.log('Deleted user favorite'))
             .catch((error) => console.error('Error deleting user favorite: ', error));
     
@@ -66,23 +155,6 @@ export default function EditFavoriteLyric() {
           navigate('/dashboard');
       }
 
-
-
-// for tags:
-// get tags from DB
-// if tag_id is in lyricObjects.tagId then checked
-  
-
-// {lyricTags.map((tag, index) => (
-//     <Form.Check
-//         key={index}
-//         inline
-//         label={tag.tag}
-//         value={tag.tagId}
-//         type='checkbox'
-//         id={`inline-checkbox-${index}`}
-//     />
-// ))}
 
     if (loading) {
     return (
@@ -99,10 +171,10 @@ export default function EditFavoriteLyric() {
                 <Card.Title>{lyricObject.songTitle}</Card.Title>
                     <Card.Subtitle>{lyricObject.albumTitle}</Card.Subtitle>
                     <Card.Text style={{ whiteSpace: 'pre-line' }}>
-                        {lyricObject.lyric}
+                        {lyricObject.lyric.lyric}
                     </Card.Text>
                     <h5>Why do you love it?</h5>
-                    {/* <div>
+                    <Form>
                         {lyricTags.map((tag, index) => (
                             <Form.Check
                                 key={index}
@@ -111,11 +183,14 @@ export default function EditFavoriteLyric() {
                                 value={tag.tagId}
                                 type='checkbox'
                                 id={`inline-checkbox-${index}`}
+                                onChange={handleCheckboxChange}
+                                defaultChecked={lyricObject.tags.some(lyricTag => lyricTag.tagId === tag.tagId)}
                             />
                         ))}
-                    </div> */}
+                    </Form>
+
                     <div>
-                    <Button>Save Changes</Button>
+                    <Button onClick={handleSubmit}>Save Changes</Button>
                     </div>
                     
             </Card.Body>
