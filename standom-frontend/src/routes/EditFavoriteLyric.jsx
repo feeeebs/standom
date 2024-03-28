@@ -5,11 +5,10 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import NavigationBar from '../components/NavigationBar';
 import { v4 as uuidv4 } from 'uuid';
 
-export default function EditFavoriteLyric({ userInfo }) {
+export default function EditFavoriteLyric() {
     const location = useLocation();
     const { lyricObject } = location.state;
     const { favoriteId } = lyricObject;
-    const userId = userInfo.id;
     const navigate = useNavigate();
 
     const userFavoritesCollection = useCollection('users_favorite_lyrics', 'postgres_id');
@@ -25,20 +24,21 @@ export default function EditFavoriteLyric({ userInfo }) {
         setSelectedLyricTags(lyricObject.tags.map(tag => ({ tagId: tag.tagId, tag: tag.tag })));
     }, []);
     
-    useEffect(() => {
-        console.log('lyric tags: ', lyricTags);
-        console.log('selected tags: ', selectedLyricTags);
-        console.log('lyric object tags: ', lyricObject.tags);
-        console.log('lyric object tag bool: ', lyricObject.tags.includes(lyricObject.tags[0]))
-    }, [lyricTags, selectedLyricTags]);
+    // useEffect(() => {
+    //     console.log('lyric tags: ', lyricTags);
+    //     console.log('selected tags: ', selectedLyricTags);
+    //     console.log('lyric object tags: ', lyricObject.tags);
+    //     console.log('lyric object tag bool: ', lyricObject.tags.includes(lyricObject.tags[0]))
+    // }, [lyricTags, selectedLyricTags]);
 
-    useEffect(() => {
-        console.log('loading state: ', loading);
-    }, [loading]);
+    // useEffect(() => {
+    //     console.log('loading state: ', loading);
+    // }, [loading]);
 
+    // fetch lyric tags from DB
     useEffect(() => {
         const fetchTags = async () => {
-            // fetch lyric tags
+
             const lyricTagsSnapshot = await lyricTagsCollection
             .query()
             .dereference()
@@ -95,8 +95,8 @@ export default function EditFavoriteLyric({ userInfo }) {
         }
     }
     
+    // handle form submission
     async function handleSubmit(e) {
-
         e.preventDefault()
 
         // function to add the new lyric tag list to the DB

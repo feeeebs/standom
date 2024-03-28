@@ -177,7 +177,6 @@ export default function AddNewLyrics({ userInfo }) {
 
 
     // TO DO: ADD ALBUM ART TO TOP OF CARD
-    // TO DO: WHY YOU LOVE IT TAGS
   return (
     <>
         <NavigationBar />
