@@ -14,10 +14,12 @@ export default function Quiz() {
 
     const [loading, setLoading] = useState(true);
     const [disableButton, setDisableButton] = useState(true);
+    const [totalScore, setTotalScore] = useState([]); 
     
     const questionCollection = useCollection('quiz_questions', 'postgres_id'); // DB reference to quiz questions
     const answerCollection = useCollection('quiz_answers', 'postgres_id'); // DB reference to quiz answers
     const userQuizCollection = useCollection('user_quizzes', 'postgres_id'); // DB reference to user quizzes
+    const quizScoringCollection = useCollection('quiz_scoring', 'postgres_id'); // DB reference to quiz scores
 
     const createQuiz = []; // Just used to store quiz as it's being collected from the DB
 
@@ -29,13 +31,17 @@ export default function Quiz() {
     const userAnswers = useSelector(state => state.quiz.userAnswers);
 
     useEffect(() => {
+        console.log('total score: ', totalScore);
+    }, [totalScore]);
+
+    useEffect(() => {
         const getQuiz = async () => {
             try {
                 const questionSnapshot = await questionCollection.query().snapshot();
                 questionSnapshot.forEach(questionRow => {
                     const { question_id, question } = questionRow.data;
                     //console.log('running question snapshot for loop for: ', question);
-                    createQuiz[question_id] = { question: question, answers: [] };
+                    createQuiz[question_id] = { question: {question_id: question_id, question: question}, answers: [] };
                 });
                 const answerSnapshot = await answerCollection.query().snapshot();
                 //console.log('number of rows in answerSnapshot: ', answerSnapshot.length);
@@ -56,6 +62,7 @@ export default function Quiz() {
                 })
                 // Store final quiz in redux
                 dispatch(setFinalQuiz(createQuiz));
+
 
                 //console.log('about to set questions: ', finalQuiz[questionIndex]);
                 //console.log('questionIndex: ', questionIndex);
@@ -137,8 +144,8 @@ export default function Quiz() {
       }
     
 
-    // Handle user answers
-    function handleSubmit(event) {
+    // Handle user answers on answer submission
+    async function handleSubmit(event) {
         event.preventDefault();
 
         // Calculate the index of the next question
@@ -151,7 +158,39 @@ export default function Quiz() {
             
             // Write user answers to DB
             insertUserAnswersToDb();
+
+            // take the scoreObject and order it by scores, biggest to smallest
+            // display the albums in that order
         } else {
+            // Get the answer's scores from the quiz_scoring table
+            const getScores = async () => {
+                const answerId = parseInt(userAnswers[questionIndex]);
+                console.log('getting snapshot for answer_id: ', answerId);
+                console.log('getting snapshot for question_id: ', finalQuiz[questionIndex].question.question_id);
+                const scoreSnapshot = await quizScoringCollection
+                    .query()
+                    .eq('answer_id', answerId)
+                    .eq('question_id', finalQuiz[questionIndex].question.question_id)
+                    .dereference()
+                    .snapshot();
+                
+                console.log('scoreSnapshot: ', scoreSnapshot);
+                scoreSnapshot.forEach(scoreRow => {
+                    const { album_id, score } = scoreRow;
+                    console.log('album_id: ', album_id);
+                    console.log('score: ', score);
+                    // TO DO - add the score to the user's score object
+                    // TO DO - add the score to the total score object
+
+                    // Add the score to the total score state
+                    setTotalScore(prevTotalScore => ({
+                        ...prevTotalScore, 
+                        [album_id]: (prevTotalScore[album_id] || 0) + score
+                    }));
+                });
+            }
+            await getScores();
+
             // Get the next question from fullQuiz
             console.log('setting next question: ', finalQuiz[newIndex])
             console.log('fullquiz after submit: ', finalQuiz)
@@ -160,6 +199,13 @@ export default function Quiz() {
             setDisableButton(true);
         }
     }
+
+    // Get score of answer and add it to the user's score object
+    // scoreObject = [{album_id: 1, score: 0}, {album_id: 2, score: 0}, {album_id: 3, score: 0}, etc]
+    // STEPS
+        // take the question_id and answer_id from the user answer; 
+        // look up the score in the quiz_scoring table
+        // for each row, add the score value to the related album_id in the scoreObject
 
 
     return (
@@ -172,7 +218,7 @@ export default function Quiz() {
                         ) : (
                             currentQuestion && currentQuestion.answers && (
                                 <div className='list-group'>
-                                    <h5>{currentQuestion.question}</h5>
+                                    <h5>{currentQuestion.question.question}</h5>
                                     <Form onSubmit={handleSubmit}>
                                         {currentQuestion.answers.map((answer, answerIndex) => (
                                             <div key={answerIndex}>
