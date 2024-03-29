@@ -14,7 +14,8 @@ export default function Quiz() {
 
     const [loading, setLoading] = useState(true);
     const [disableButton, setDisableButton] = useState(true);
-    const [totalScore, setTotalScore] = useState([]); 
+    const [totalScore, setTotalScore] = useState([]);
+    const [albumJourney, setAlbumJourney] = useState([]);
     
     const questionCollection = useCollection('quiz_questions', 'postgres_id'); // DB reference to quiz questions
     const answerCollection = useCollection('quiz_answers', 'postgres_id'); // DB reference to quiz answers
@@ -32,7 +33,8 @@ export default function Quiz() {
 
     useEffect(() => {
         console.log('total score: ', totalScore);
-    }, [totalScore]);
+        console.log('album journey: ', albumJourney);
+    }, [totalScore, albumJourney]);
 
     useEffect(() => {
         const getQuiz = async () => {
@@ -153,6 +155,20 @@ export default function Quiz() {
         
         // check if quiz is completed
         if (newIndex === quizLength) {
+            // Convert totalScore into an array of objects
+            const totalScoreArray = Object.entries(totalScore).map(([album_id, score]) => ({ album_id, score }));
+
+            // Sort the array by score from biggest to smallest
+            totalScoreArray.sort((a, b) => b.score - a.score);
+
+            // Convert the sorted array back into an object
+            // Sort the totalScore array by score from biggest to smallest
+            const sortedTotalScore = [...totalScore].sort((a, b) => b.score - a.score);
+
+            // Update the albumJourney state
+            setAlbumJourney(sortedTotalScore);
+
+
             // Update quiz status in Redux
             dispatch(updateQuizTaken(true));
             
@@ -179,14 +195,21 @@ export default function Quiz() {
                     const { album_id, score } = scoreRow;
                     console.log('album_id: ', album_id);
                     console.log('score: ', score);
-                    // TO DO - add the score to the user's score object
-                    // TO DO - add the score to the total score object
 
-                    // Add the score to the total score state
-                    setTotalScore(prevTotalScore => ({
-                        ...prevTotalScore, 
-                        [album_id]: (prevTotalScore[album_id] || 0) + score
-                    }));
+                    // Update the total score state
+                    setTotalScore(prevTotalScore => {
+                        const existingAlbumIndex = prevTotalScore.findIndex(item => item.album_id === album_id);
+
+                        if (existingAlbumIndex > -1) {
+                            // If the album_id already exists, update the score
+                            const updatedTotalScore = [...prevTotalScore];
+                            updatedTotalScore[existingAlbumIndex].score += score;
+                            return updatedTotalScore;
+                        } else {
+                            // If the album_id does not exist, add a new object
+                            return [...prevTotalScore, { album_id, score }];
+                        }
+                    });
                 });
             }
             await getScores();
