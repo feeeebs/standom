@@ -1,8 +1,8 @@
 import React from 'react';
 import { Container, Row } from 'react-bootstrap';
-import Quiz from '../components/Quiz';
 import MyFavoriteLyrics from '../components/MyFavoriteLyrics';
 import NavigationBar from '../components/NavigationBar';
+import QuizParent from '../components/QuizParent';
 
 export default function Dashboard({ userInfo }) {
 
@@ -19,7 +19,7 @@ export default function Dashboard({ userInfo }) {
         </div>
         <Container>
             <Row>
-                <Quiz />
+                <QuizParent />
             </Row>
             <Row>
                 <MyFavoriteLyrics />

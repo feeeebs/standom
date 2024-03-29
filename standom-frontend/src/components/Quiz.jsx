@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Form } from 'react-bootstrap';
 import { useCollection } from '@squidcloud/react';
-import QuizResults from './QuizResults';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFinalQuiz, setQuestions, setFirstQuestion, updateQuizTaken, updateUserAnswers } from '../utilities/Redux/quizSlice';
 import { v4 as uuidv4 } from 'uuid';
 
 
-export default function Quiz() {
+export default function Quiz(props) {
 
     // State to manage user answers and quiz questions
     const userId = useSelector(state => state.user.userInfo.id);
@@ -15,7 +14,6 @@ export default function Quiz() {
     const [loading, setLoading] = useState(true);
     const [disableButton, setDisableButton] = useState(true);
     const [totalScore, setTotalScore] = useState([]);
-    const [albumJourney, setAlbumJourney] = useState([]);
     
     const questionCollection = useCollection('quiz_questions', 'postgres_id'); // DB reference to quiz questions
     const answerCollection = useCollection('quiz_answers', 'postgres_id'); // DB reference to quiz answers
@@ -25,16 +23,16 @@ export default function Quiz() {
     const createQuiz = []; // Just used to store quiz as it's being collected from the DB
 
     const dispatch = useDispatch();
-    const quizStatus = useSelector(state => state.quiz.quizTaken);
     const currentQuestion = useSelector(state => state.quizQuestions.question);
     const questionIndex = useSelector(state => state.quizQuestions.currentIndex);
 
     const userAnswers = useSelector(state => state.quiz.userAnswers);
 
-    useEffect(() => {
-        console.log('total score: ', totalScore);
-        console.log('album journey: ', albumJourney);
-    }, [totalScore, albumJourney]);
+    // useEffect(() => {
+    //     console.log('total score: ', totalScore);
+    //     console.log('album journey: ', albumJourney);
+    // }, [totalScore, albumJourney]);
+
 
     useEffect(() => {
         const getQuiz = async () => {
@@ -93,13 +91,6 @@ export default function Quiz() {
     // Get quiz length to track progress through quiz
     const quizLength = Object.keys(finalQuiz).length;
     
-
-    // if the quiz has been taken already, display the results
-    // TO DO -- can I make this happen before I do all the quiz stuff so I don't do that unnecessarily?
-    if (quizStatus === true) {
-        return <QuizResults />;
-    }
-
 
     // Save current selection to userAnswers on button click
     function handleButtonClick(event) {
@@ -166,7 +157,7 @@ export default function Quiz() {
             const sortedTotalScore = [...totalScore].sort((a, b) => b.score - a.score);
 
             // Update the albumJourney state
-            setAlbumJourney(sortedTotalScore);
+            props.setAlbumJourney(sortedTotalScore);
 
 
             // Update quiz status in Redux
@@ -264,3 +255,4 @@ export default function Quiz() {
         </Card>
     )
 }
+
