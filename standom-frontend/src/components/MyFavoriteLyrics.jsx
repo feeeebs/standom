@@ -179,7 +179,7 @@ export default function MyFavoriteLyrics() {
         <h2 className='text-center mb-4'>My Favorite Lyrics</h2>
           <Button className='mb-2' onClick={handleClick}>Add New Lyrics</Button>
           {loading ? (
-            <div className='text-center mb-3'>In search of glorious happenings of happenstance in someone else's playground...</div>
+            <div className='text-center mb-3'>In search of glorious happenings of happenstance...</div>
           ) : (
           <ListGroup>
             {lyricInfo.length > 0 ? (
